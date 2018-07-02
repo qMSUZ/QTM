@@ -31,13 +31,13 @@
 #include "qtm.h" 
 
 const size_t COLLAPSE_OPERATORS = 1;
-const size_t Ntrj = 1;
+const size_t Ntrj = 150;
 const size_t N = 100;
-const size_t WAVEVECTOR_LEAD_DIM = 2;
-const size_t WAVEVECTOR_LEAD_DIM_SQR = 4;
+const size_t WAVEVECTOR_LEAD_DIM = 5;
+const size_t WAVEVECTOR_LEAD_DIM_SQR = 25;
 
 uMatrix< simpleComplex<double>, WAVEVECTOR_LEAD_DIM > c_ops[ COLLAPSE_OPERATORS ];
-uVector< simpleComplex<double>, WAVEVECTOR_LEAD_DIM_SQR > collapse_operator;
+uVector< simpleComplex<double>, WAVEVECTOR_LEAD_DIM_SQR > co0, co1;
 uVector< simpleComplex<double>, WAVEVECTOR_LEAD_DIM_SQR > expect_operator;
 uVector< simpleComplex<double>, WAVEVECTOR_LEAD_DIM_SQR > H;
 simpleComplex<double> alpha[WAVEVECTOR_LEAD_DIM];
@@ -53,25 +53,21 @@ int myfex_fnc_f1(	long int *NEQ,
 			dblcmplx *RPAR,
 			long int *IPAR)
 {
-    simpleComplex<double> o0, o1, out0, out1;
+    // YDOT = H * Y;
+	
+    size_t i, k;
+    //uVector< struct simpleComplex<T>, SIZE2> vtmp ;
 
-      o0.re=0.0;   o0.im=0.0; o1.re=0.0;   o1.im=0.0;
-    out0.re=0.0; out0.im=0; out1.re=0.0; out1.im=0.0;
-
-    o0 = Y[0] * H[0];
-    o1 = Y[1] * H[1];
-
-    out0 = o0 + o1;
-
-    o0.re=0.0;   o0.im=0.0; o1.re=0.0;   o1.im=0.0;
-
-    o0 = Y[0] * H[2];
-    o1 = Y[1] * H[3];
-
-    out1 = o0 + o1;
-
-    YDOT[0] = out0;
-    YDOT[1] = out1;
+	for( i=0; i<WAVEVECTOR_LEAD_DIM ; i++)
+    {
+        YDOT[i].re = 0.0;
+        YDOT[i].im = 0.0;
+		for( k=0; k <  WAVEVECTOR_LEAD_DIM; k++)
+        {
+            YDOT[i] = YDOT[i] + H[ (i * WAVEVECTOR_LEAD_DIM) + k] * Y[k];
+        } // for( k=0; k < sy ; k++)
+    } // for( i=0 ; i<m.cols ; i++)
+	
 
 	return 0;
 }
@@ -79,24 +75,54 @@ int myfex_fnc_f1(	long int *NEQ,
 int main(int argc, char *argv[])
 {
 	int r = 0;
-	collapse_operator[0] = make_simpleComplex( 0.0, 0.0 );  collapse_operator[1] = make_simpleComplex( 0.05, 0.0 );
-    collapse_operator[2] = make_simpleComplex( 0.05, 0.0 ); collapse_operator[3] = make_simpleComplex( 0.0, 0.0 );
 
-    expect_operator[0] = make_simpleComplex( 1.0, 0.0); expect_operator[1] = make_simpleComplex( 0.0, 0.0);
-    expect_operator[2] = make_simpleComplex( 0.0, 0.0); expect_operator[3] = make_simpleComplex(-1.0, 0.0);
+	zerovector(co0);
+	zerovector(co1);
 
-    alpha[0] = make_simpleComplex( 1.0, 0.0);
-    alpha[1] = make_simpleComplex( 0.0, 0.0);
+	co0[ 1] = make_simpleComplex( 2.87059403, 0.0);
+	co0[ 7] = make_simpleComplex( 4.05963301, 0.0);
+	co0[13] = make_simpleComplex( 4.97201471, 0.0);
+	co0[19] = make_simpleComplex( 5.74118806, 0.0);	
+
+	co1[ 5] = make_simpleComplex( 0.69883624, 0.0);
+	co1[11] = make_simpleComplex( 0.98830369, 0.0);
+	co1[17] = make_simpleComplex( 1.21041988, 0.0);
+	co1[23] = make_simpleComplex( 1.39767248, 0.0);	
+
+	
+	zerovector( expect_operator );
+
+    expect_operator[ 0] = make_simpleComplex( 0.0, 0.0);    
+	expect_operator[ 6] = make_simpleComplex( 1.0, 0.0);
+	expect_operator[12] = make_simpleComplex( 2.0, 0.0);
+	expect_operator[18] = make_simpleComplex( 3.0, 0.0);
+	expect_operator[24] = make_simpleComplex( 4.0, 0.0);
+	
+    alpha[0] = make_simpleComplex( 0.0, 0.0);
+    alpha[1] = make_simpleComplex( 1.0, 0.0);
+    alpha[2] = make_simpleComplex( 0.0, 0.0);
+    alpha[3] = make_simpleComplex( 0.0, 0.0);
+    alpha[4] = make_simpleComplex( 0.0, 0.0);
+	
 	
 	// effective Hamiltonian
 	// Heff = (H - ((ih)/2.0) * sum(C^{+}_n C_n))
-	// i -- imaginary unity 
-    H[0] = make_simpleComplex( -0.00125, 0.0);    H[1] = make_simpleComplex( 0.0, -0.62831853);
-    H[2] = make_simpleComplex( 0.0, -0.62831853); H[3] = make_simpleComplex( -0.00125, 0.0);
+	// i -- imaginary unity
 	
-	c_ops[0].rows=2;
-    c_ops[0].cols=2;
-    c_ops[0].m = collapse_operator;
+	zerovector( H );
+    H[ 0] = make_simpleComplex( 0.0, -0.24418604651162792);    
+	H[ 6] = make_simpleComplex( 1.0, -4.6085271317829459);
+	H[12] = make_simpleComplex( 2.0, -8.9728682170542644);
+	H[18] = make_simpleComplex( 3.0, -13.337209302325581 );
+	H[24] = make_simpleComplex( 4.0, -16.480620155038761);
+	
+	c_ops[0].rows=5;
+    c_ops[0].cols=5;
+    c_ops[0].m = co0;
+
+	c_ops[1].rows=5;
+    c_ops[1].cols=5;
+    c_ops[1].m = co1;
 	
 	opt.type_output = OUTPUT_FILE;
 	opt.only_final_trj = 1;
@@ -106,9 +132,12 @@ int main(int argc, char *argv[])
 	opt.fnc = &myfex_fnc_f1;
 	
 	
-	r = mpi_main<N, Ntrj, WAVEVECTOR_LEAD_DIM, WAVEVECTOR_LEAD_DIM_SQR, COLLAPSE_OPERATORS>(argc, argv, 1, 
-		0, 10, 
+	r = mpi_main<N, Ntrj, 
+		WAVEVECTOR_LEAD_DIM, WAVEVECTOR_LEAD_DIM_SQR, COLLAPSE_OPERATORS>(argc, argv, 1, 
+		0.0, 0.8,
 		1, 1, opt);
+
+
 	
 	return r;
 }

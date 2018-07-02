@@ -36,12 +36,19 @@ MGXX    = g++
 #CC      = mpic++
 CC      = g++
 RUN     = mpirun
-CFLAGS  = -I. -fpermissive
-FCFLAGS = -I. 
+CFLAGS  = -I. -fpermissive -O2
+FCFLAGS = -I. -O2
 
-OUTPUTNAME = qtm.exe
+OUTPUTNAME_U = unitary-ex.exe
+OUTPUTNAME_TRIHAM = triham-ex.exe
+OUTPUTNAME_BDPC = bdpc-ex.exe
+OUTPUTNAME_JCM = jcm-ex.exe
 
 QTM_MAIN_SRC = unitary-mc-ex.cc rgen_lfsr113.cc
+TRIHAM_OBJ_SRC = triham-mc-ex.cc rgen_lfsr113.cc
+BDPC_OBJ_SRC = bdpc-ex.cc rgen_lfsr113.cc
+JCM-MC-EX_SRC = jaynes-cummings-model-mc-ex.cc rgen_lfsr113.cc
+
 ZVODE_SRC = zvode.f zgesl.f zgefa.f zgbsl.f zgbfa.f
 
 QTM_OBJ_MAIN_SRC=$(QTM_MAIN_SRC:.cc=.o)
@@ -49,11 +56,20 @@ QTM_OBJ_ZVODE_SRC=$(ZVODE_SRC:.f=.o)
 
 LIBRARY=-lmsmpi  -lwsock32
 
-all: compile_task
+all:
 
-compile_task: $(QTM_OBJ_MAIN_SRC) $(QTM_OBJ_ZVODE_SRC)
-		$(CC) $(QTM_OBJ_MAIN_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME) -lblas -lgfortran $(LIBRARY)
+unitary-ex: $(QTM_OBJ_MAIN_SRC) $(QTM_OBJ_ZVODE_SRC)
+		$(CC) $(QTM_OBJ_MAIN_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_U) -lblas -lgfortran $(LIBRARY)
 
+triham-ex: $(TRIHAM_OBJ_SRC) $(QTM_OBJ_ZVODE_SRC)
+		$(CC) $(TRIHAM_OBJ_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_TRIHAM) -lblas -lgfortran $(LIBRARY)
+		
+bdpc-ex: $(BDPC_OBJ_SRC) $(QTM_OBJ_ZVODE_SRC)
+		$(CC) $(BDPC_OBJ_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_BDPC) -lblas -lgfortran $(LIBRARY)
+
+jcm-ex: $(JCM-MC-EX_SRC) $(QTM_OBJ_ZVODE_SRC)
+	$(CC) $(JCM-MC-EX_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_JCM) -lblas -lgfortran $(LIBRARY)
+	
 testlfsr113:
 	$(MGXX) $(CFLAGS) -c rgen_lfsr113.cc
 	$(MGXX) $(CFLAGS) -o testrgen_lfsr113 testrgen_lfsr113.cc rgen_lfsr113.o

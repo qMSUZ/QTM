@@ -23,23 +23,32 @@
 
 #include <cstdio>
 
-#define __USE_DENSE_EXPECT_OPERATORS
-#define __USE_DENSE_COLLAPSE_OPERATORS
-#define __USE_ADAMS
+
+#define __USE_SPARSE_CSR_EXPECT_OPERATORS
+#define __USE_SPARSE_CSR_COLLAPSE_OPERATORS
+#define __USE_BDF
 
 #include "complexnum.h"
 #include "qtm.h" 
 
-const size_t COLLAPSE_OPERATORS = 1;
-const size_t Ntrj = 1;
+const size_t Ntrj = 100;
 const size_t N = 100;
-const size_t WAVEVECTOR_LEAD_DIM = 2;
-const size_t WAVEVECTOR_LEAD_DIM_SQR = 4;
+const size_t WAVEVECTOR_LEAD_DIM = 8*8*8;
+const size_t WAVEVECTOR_LEAD_DIM_SQR = WAVEVECTOR_LEAD_DIM*WAVEVECTOR_LEAD_DIM;
 
-uMatrix< simpleComplex<double>, WAVEVECTOR_LEAD_DIM > c_ops[ COLLAPSE_OPERATORS ];
-uVector< simpleComplex<double>, WAVEVECTOR_LEAD_DIM_SQR > collapse_operator;
-uVector< simpleComplex<double>, WAVEVECTOR_LEAD_DIM_SQR > expect_operator;
-uVector< simpleComplex<double>, WAVEVECTOR_LEAD_DIM_SQR > H;
+uCSRMatrix<simpleComplex<double>, 448, 513, 448 > c_ops[ 3 ];
+
+uCSRMatrix<simpleComplex<double>, 448, 513, 448 > co0;
+uCSRMatrix<simpleComplex<double>, 448, 513, 448 > co1;
+uCSRMatrix<simpleComplex<double>, 448, 513, 448 > co2;
+
+
+uCSRMatrix<simpleComplex<double>, 448, 513, 448 > expect_operator;
+uCSRMatrix<simpleComplex<double>, 448, 513, 448 > expect_operator1;
+uCSRMatrix<simpleComplex<double>, 448, 513, 448 > expect_operator2;
+
+uCSRMatrix<simpleComplex<double>, 158, 81, 158> H;
+
 simpleComplex<double> alpha[WAVEVECTOR_LEAD_DIM];
 
 #include "qtm.cc"
@@ -53,25 +62,35 @@ int myfex_fnc_f1(	long int *NEQ,
 			dblcmplx *RPAR,
 			long int *IPAR)
 {
-    simpleComplex<double> o0, o1, out0, out1;
+    size_t i, j;
 
-      o0.re=0.0;   o0.im=0.0; o1.re=0.0;   o1.im=0.0;
-    out0.re=0.0; out0.im=0; out1.re=0.0; out1.im=0.0;
+    for ( i=0; i < WAVEVECTOR_LEAD_DIM; i++)
+    {
+        YDOT[i].re = 0.0;
+        YDOT[i].im = 0.0;
+    }
 
-    o0 = Y[0] * H[0];
-    o1 = Y[1] * H[1];
+    for ( i=0; i < WAVEVECTOR_LEAD_DIM; i++)
+    {
+        for ( j=H.row_ptr[i] ; j < H.row_ptr[i+1] ; j++)
+        {
+            YDOT[i]= YDOT[i] + (H.values[j] * Y[H.col_ind[j]]);
+        }
+    }
 
-    out0 = o0 + o1;
+	return 0;
+}
 
-    o0.re=0.0;   o0.im=0.0; o1.re=0.0;   o1.im=0.0;
+int prepare_matrices()
+{
 
-    o0 = Y[0] * H[2];
-    o1 = Y[1] * H[3];
+#include "data-h.txt"
 
-    out1 = o0 + o1;
+#include "data-c0.txt"	
+#include "data-c1.txt"	
+#include "data-c2.txt"
 
-    YDOT[0] = out0;
-    YDOT[1] = out1;
+#include "data-e0.txt"
 
 	return 0;
 }
@@ -79,36 +98,22 @@ int myfex_fnc_f1(	long int *NEQ,
 int main(int argc, char *argv[])
 {
 	int r = 0;
-	collapse_operator[0] = make_simpleComplex( 0.0, 0.0 );  collapse_operator[1] = make_simpleComplex( 0.05, 0.0 );
-    collapse_operator[2] = make_simpleComplex( 0.05, 0.0 ); collapse_operator[3] = make_simpleComplex( 0.0, 0.0 );
 
-    expect_operator[0] = make_simpleComplex( 1.0, 0.0); expect_operator[1] = make_simpleComplex( 0.0, 0.0);
-    expect_operator[2] = make_simpleComplex( 0.0, 0.0); expect_operator[3] = make_simpleComplex(-1.0, 0.0);
-
-    alpha[0] = make_simpleComplex( 1.0, 0.0);
-    alpha[1] = make_simpleComplex( 0.0, 0.0);
-	
-	// effective Hamiltonian
-	// Heff = (H - ((ih)/2.0) * sum(C^{+}_n C_n))
-	// i -- imaginary unity 
-    H[0] = make_simpleComplex( -0.00125, 0.0);    H[1] = make_simpleComplex( 0.0, -0.62831853);
-    H[2] = make_simpleComplex( 0.0, -0.62831853); H[3] = make_simpleComplex( -0.00125, 0.0);
-	
-	c_ops[0].rows=2;
-    c_ops[0].cols=2;
-    c_ops[0].m = collapse_operator;
+	prepare_matrices();
 	
 	opt.type_output = OUTPUT_FILE;
 	opt.only_final_trj = 1;
-	opt.ode_method = METADAMS;
+	opt.ode_method = METBDF;
 	opt.tolerance = 1e-7;
 	opt.file_name = strdup("output-data.txt");
 	opt.fnc = &myfex_fnc_f1;
 	
 	
-	r = mpi_main<N, Ntrj, WAVEVECTOR_LEAD_DIM, WAVEVECTOR_LEAD_DIM_SQR, COLLAPSE_OPERATORS>(argc, argv, 1, 
-		0, 10, 
-		1, 1, opt);
+	r = mpi_main<N, Ntrj, WAVEVECTOR_LEAD_DIM, WAVEVECTOR_LEAD_DIM_SQR, 3>(argc, argv, 1, 
+		0, 4, 
+		2, 2, opt);
+
+
 	
 	return r;
 }

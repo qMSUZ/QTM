@@ -71,21 +71,33 @@ long int liw, lrw, lzw, ipar;
 double atol_val;
 dblcmplx rpar;
 long int itol, iopt;
-double rtol;
+double rtol_val;
 long int iout;
 double tout;
 dblcmplx wtru;
 double aberr, aemax;
 long int itask;
 long int saveitask;
-long int iwork[30];
+#ifdef  __USE_ADAMS
+long int iwork[30]; // for mf=10
+#endif
+#ifdef  __USE_BDF
+long int iwork[30 + WAVEVECTOR_LEAD_DIM]; // for mf=22
+#endif
+
 double dtout;
-double rwork[22];
-dblcmplx zwork[30];
+double rwork[20 + WAVEVECTOR_LEAD_DIM];
+#ifdef  __USE_ADAMS
+dblcmplx zwork[15 * WAVEVECTOR_LEAD_DIM]; // for mf=10
+#endif
+#ifdef  __USE_BDF
+// 8*NEQ + 2*NEQ**2
+dblcmplx zwork[(8 * WAVEVECTOR_LEAD_DIM) + (2*WAVEVECTOR_LEAD_DIM*WAVEVECTOR_LEAD_DIM)]; // for mf=22
+#endif
+
 long int istate;
 
-
-
+typedef int (*fncFP)( ... );
 
 void print_ip(const int host_rank, const char *processor_name)
 {
@@ -122,17 +134,17 @@ void print_ip(const int host_rank, const char *processor_name)
 
     if(p != NULL)
     {
-#ifdef _WIN32
+//#ifdef _WIN32
         printf ("main: Node [%d] Proc.Name [%s]:  local ip=[%s] \n", host_rank, processor_name, buffer);
-#else
-        printf ("main: Node [%d] Proc.Name [%s]:  local ip=[%s] \n", host_rank, processor_name, buffer);
-#endif
+//#else
+//        printf ("main: Node [%d] Proc.Name [%s]:  local ip=[%s] \n", host_rank, processor_name, buffer);
+//#endif
         //printf("Local IP is : %s \n" , buffer);
     }
     else
     {
         //Some error
-        printf ("main: Error number : %d . Error message : %s \n" , err , strerror(err));
+        printf ("main: Error number : %d. Error message : %s.\n" , err, strerror(err));
     }
 #ifdef _WIN32
 	closesocket(sock);
@@ -143,60 +155,11 @@ void print_ip(const int host_rank, const char *processor_name)
 }
 
 
-typedef int (*fncFP)( ... );
-
 extern "C" int zvode_(fncFP, long int *, dblcmplx *,
 	    double *, double *, long int *, double *, double *,
 	     long int *, long int *, long int *, dblcmplx *, long int *,
 	    double *, long int *, long int *, long int *, fncFP, long int *,
 	    dblcmplx *, long int *);
-
-
-int myfex_fnc_f1(	long int *NEQ,
-			double *T,
-			dblcmplx *Y,
-			dblcmplx *YDOT,
-			dblcmplx *RPAR,
-			long int *IPAR)
-{
-    simpleComplex<double> o0, o1, out0, out1;
-
-      o0.re=0.0;   o0.im=0.0; o1.re=0.0;   o1.im=0.0;
-    out0.re=0.0; out0.im=0; out1.re=0.0; out1.im=0.0;
-
-    o0 = Y[0] * H[0];
-    o1 = Y[1] * H[1];
-
-    out0 = o0 + o1;
-
-    o0.re=0.0;   o0.im=0.0; o1.re=0.0;   o1.im=0.0;
-
-    o0 = Y[0] * H[2];
-    o1 = Y[1] * H[3];
-
-    out1 = o0 + o1;
-
-    YDOT[0] = out0;
-    YDOT[1] = out1;
-
-	return 0;
-}
-
-
-#if 0
-int myfex(	long int *NEQ,
-			double *T,
-			dblcmplx *Y,
-			dblcmplx *YDOT,
-			dblcmplx *RPAR,
-			long int *IPAR)
-{
-	YDOT[0] = mone * (*RPAR) * Y[0] * Y[0] * Y[1];
-	YDOT[1] = (*RPAR) * Y[1];
-
-	return 0;
-}
-#endif
 
 
 int dummyjex(	long int *NEQ,
@@ -264,7 +227,7 @@ int zvode_method_for_mc(TYPE h, TYPE &_Tout_par, int steps,
 	int errLvl = 0;
 
 		zvode_((fncFP)fnc,
-			&neq, _Y_par.m, &_T_par.re, &_Tout_par, &itol, &rtol, &atol_val, &itask,
+			&neq, _Y_par.m, &_T_par.re, &_Tout_par, &itol, &rtol_val, &atol_val, &itask,
 			&istate, &iopt, zwork, &lzw, rwork, &lrw, iwork, &liw,
 			(fncFP)dummyjex,
 			&mf, &rpar, &ipar);
@@ -280,35 +243,6 @@ int zvode_method_for_mc(TYPE h, TYPE &_Tout_par, int steps,
 
 	return errLvl;
 }
-
-template <typename TYPE, size_t SIZE>
-uVector< simpleComplex<TYPE>, SIZE > fnc_t1(const simpleComplex<TYPE> T, const uVector< simpleComplex<TYPE>, SIZE > &Y)
-{
-    simpleComplex<TYPE> o0, o1, out0, out1;
-    uVector< simpleComplex<TYPE>, SIZE > YDOT;
-
-      o0.re=0.0;   o0.im=0.0; o1.re=0.0;   o1.im=0.0;
-    out0.re=0.0; out0.im=0; out1.re=0.0; out1.im=0.0;
-
-    o0 = Y[0] * H[0];
-    o1 = Y[1] * H[1];
-
-    out0 = o0 + o1;
-
-    o0.re=0.0;   o0.im=0.0; o1.re=0.0;   o1.im=0.0;
-
-    o0 = Y[0] * H[2];
-    o1 = Y[1] * H[3];
-
-    out1 = o0 + o1;
-
-    YDOT[0] = out0;
-    YDOT[1] = out1;
-
-    return YDOT;
-
-}
-
 
 void send_to_all_nodes(int c1, int c2, int num_procs)
 {
@@ -326,30 +260,39 @@ void send_to_all_nodes(int c1, int c2, int num_procs)
 template<size_t N, size_t Ntrj, size_t _WV_LEAD_DIM, size_t _WV_LEAD_DIM_SQR, size_t _C_OPS_SIZE>
 int process_trajectories(double _from_time, double _to_time,
 						 int host_rank,
-						 int use_colappse_operator, int use_expecation_operator)
+						 int use_colappse_operator, int use_expecation_operator,
+						 extra_options opt)
 {
 	int i = 0, j=0, k = 0, k_ons = 0, trj = 0, odesolverstate = 0, ode_norm_steps = 5, cnt = 0;
-	int m = 5;
 
 	double a =  _from_time;
 	double b = _to_time;
 	double h = (b - a) / ((double)N - 1);
-	//double aa,bb;
 	double hh;
 
 	double mu = 0.0, nu = 0.0,
         norm2_prev = 0.0,
         norm2_psi = 0.0,
         norm2_guess= 0.0,
-        ode_norm_tol = 0.0001, sump = 0.0 ;
+        ode_norm_tol = 1e-7, sump = 0.0 ;
 
 		
     uVector< simpleComplex<double>, N > tlist;
 
-    struct uMatrix<simpleComplex<double>, Ntrj> pt_trjs;
-    pt_trjs.rows = Ntrj ;
-    pt_trjs.cols = N ;
-    uVector< simpleComplex<double>, N > pt_avg_trj;
+    //struct uMatrix<simpleComplex<double>, Ntrj> pt_trjs;
+	simpleComplex<double> **pt_trjs;
+	
+	pt_trjs = new simpleComplex<double>*[Ntrj];
+	
+	for(trj = 0; trj < Ntrj; trj++)
+		pt_trjs[trj] = new simpleComplex<double>[N];
+		
+
+	
+    //pt_trjs.rows = Ntrj ;
+    //pt_trjs.cols = N ;
+	
+    simpleComplex<double> pt_avg_trj[N];
 
 	dblcmplx mone;
 	dblcmplx mtwo;
@@ -372,6 +315,7 @@ int process_trajectories(double _from_time, double _to_time,
 	lfsr113_generator_init(seed0, seed1, seed2, seed3);
 	
 	printf ("process_trajectories: Node [%d] Proc.Name [%s]: begin \n", host_rank, processor_name);
+	fflush(stdout);
 
 
     uVector< simpleComplex<double>, N > P;
@@ -414,19 +358,34 @@ int process_trajectories(double _from_time, double _to_time,
 
 	neq = _WV_LEAD_DIM;
 	itol = 1;
-	rtol = 1e-8;
+	rtol_val = 1e-8;
 	atol_val = 1e-7;
-	itask = 5;
-	istate = 1;
 	iopt = 0;
-	lzw = 30;
-	lrw = 22;
-	liw = 30;
-	mf = 10;  // 10 for nonstiff (Adams) method, no Jacobian used.
+	if(opt.ode_method == METADAMS)
+	{
+		itask = 5;
+		istate = 1;
+		lzw = 15 * _WV_LEAD_DIM; // for 10
+		lrw = 20 + _WV_LEAD_DIM; // for 10
+		liw = 30;
+		mf = 10;  // 10 for nonstiff (Adams) method, no Jacobian used.
+	}
+	if(opt.ode_method == METBDF)
+	{
+		itask = 5;
+		istate = 1;
+		lzw = (8 * _WV_LEAD_DIM) + (2*_WV_LEAD_DIM*_WV_LEAD_DIM); // for 22
+		lrw = 20 + _WV_LEAD_DIM; // for 22
+		liw = 30 + _WV_LEAD_DIM; // for 22
+		mf = 22;  // 22 for stiff method, internally generated full Jacobian.
+	}
+
 	rpar.re = 0.0;
 	rpar.im = 0.0;
 	aemax = 0.0;
 
+	
+	
 //          10 for nonstiff (Adams) method, no Jacobian used.
 //          21 for stiff (BDF) method, user-supplied full Jacobian.
 //          22 for stiff method, internally generated full Jacobian.
@@ -445,6 +404,7 @@ int process_trajectories(double _from_time, double _to_time,
 
 
 	printf ("process_trajectories: Node [%d] Proc.Name [%s]:  tlist done \n", host_rank, processor_name);
+	fflush(stdout);
 
 	for ( trj = 0 ; trj < Ntrj ; trj++)
     {
@@ -457,20 +417,29 @@ int process_trajectories(double _from_time, double _to_time,
         }
 
 		istate = 1;
-
+#ifdef __USE_DENSE_EXPECT_OPERATORS
+			if(use_expecation_operator == 0)
+			{
+				ev = expect_cnv_denmat< simpleComplex<double>, _WV_LEAD_DIM_SQR,_WV_LEAD_DIM>(_WV_LEAD_DIM, _WV_LEAD_DIM, id_operator, Y);
+			}
 			if(use_expecation_operator == 1)
 			{
 				ev = expect_cnv_denmat< simpleComplex<double>, _WV_LEAD_DIM_SQR, _WV_LEAD_DIM>(_WV_LEAD_DIM, _WV_LEAD_DIM, expect_operator, Y);
-				pt_trjs(trj, 0) = ev;
-			} else {
-				ev = expect_cnv_denmat< simpleComplex<double>, _WV_LEAD_DIM_SQR,_WV_LEAD_DIM>(_WV_LEAD_DIM, _WV_LEAD_DIM, id_operator, Y);
-				pt_trjs(trj, 0) = ev;
-			}
-
+				//printf("ev=%f\n", ev.re); fflush(stdout);
+			} 
+#endif			
+#ifdef __USE_SPARSE_CSR_EXPECT_OPERATORS
+			if(use_expecation_operator == 2)
+			{
+				ev = expect_cnv_csrdenmat(expect_operator, Y);
+			} 
+#endif
+			pt_trjs[trj][0] = ev;
 
             int counterIter = 0;
 
-			printf ("process_trajectories: Node [%d] Proc.Name [%s]:  trj %d \n", host_rank, processor_name, trj);
+			printf ("process_trajectories: Node [%d] Proc.Name [%s]:  trj %d: after initial expecation operator.\n", host_rank, processor_name, trj);
+			fflush(stdout);
 
 			T=tlist[0];
 
@@ -492,13 +461,18 @@ int process_trajectories(double _from_time, double _to_time,
 
                     norm2_prev = norm2_psi;
 
-					odesolverstate = zvode_method_for_mc<double,_WV_LEAD_DIM,_WV_LEAD_DIM>(h, tout, 1,  T, Y, &myfex_fnc_f1);
+				//printf ("process_trajectories: Node [%d] Proc.Name [%s]:  trj %d: while point 1 -- zvode first call.\n", host_rank, processor_name, trj);
+				//fflush(stdout);
+					
+					
+					odesolverstate = zvode_method_for_mc<double,_WV_LEAD_DIM,_WV_LEAD_DIM>(h, tout, 1,  T, Y, opt.fnc);
 
                     norm2_psi = norm( Y );
 
                     if(norm2_psi <= mu )
                     {
 						printf ("process_trajectories: Node [%d] Proc.Name [%s]:  %s \n", host_rank, processor_name, "Collpase has occured.");
+						fflush(stdout);
 
                         T_final = T ;
                         cnt = 0 ;
@@ -517,9 +491,11 @@ int process_trajectories(double _from_time, double _to_time,
 
 							saveitask=itask;
 							itask=1;
-							odesolverstate = zvode_method_for_mc<double,_WV_LEAD_DIM,_WV_LEAD_DIM>(h, T_guess.re, 1, T, Y, &myfex_fnc_f1);
+							odesolverstate = zvode_method_for_mc<double,_WV_LEAD_DIM,_WV_LEAD_DIM>(h, T_guess.re, 1, T, Y, opt.fnc);
 							itask=saveitask;
 							printf ("process_trajectories: Node [%d] Proc.Name [%s]: istate=%d %s \n", host_rank, processor_name, istate, "zvode_method_for_mc collapse call 2");
+							fflush(stdout);
+
 
                             norm2_guess = norm( Y ) ;
                             if ( abs(mu - norm2_guess) < (ode_norm_tol * mu) )
@@ -543,16 +519,24 @@ int process_trajectories(double _from_time, double _to_time,
                         if (cnt > ode_norm_steps)
                         {
 							printf ("process_trajectories: Node [%d] Proc.Name [%s]:  %s \n", host_rank, processor_name, "Norm tolerance not reached. Increase accuracy of ODE solver or norm_steps.");
+							fflush(stdout);
                             break;
                         }
                         else
                         {
 							printf ("process_trajectories: Node [%d] Proc.Name [%s]:  %s \n", host_rank, processor_name, "Norm tolerance is reached.");
+							fflush(stdout);
+
                         }
 
                         for ( j = 0 ; j < _C_OPS_SIZE; j++ )
                         {
+#ifdef __USE_DENSE_COLLAPSE_OPERATORS
                             Y_tmp = c_ops[j] * Y ;
+#endif
+#ifdef __USE_SPARSE_CSR_COLLAPSE_OPERATORS
+#endif
+
                             P[j].re = norm ( Y_tmp );
                         }
 
@@ -563,7 +547,11 @@ int process_trajectories(double _from_time, double _to_time,
                         {
                             if ( (sump <= nu) && (nu < (sump + P[j].re) ) )
                             {
+#ifdef __USE_DENSE_COLLAPSE_OPERATORS 															
                                 Y = c_ops[j] * Y ;  
+#endif								
+#ifdef __USE_SPARSE_CSR_COLLAPSE_OPERATORS
+#endif
                             }
                             sump = sump + P[j].re ;
                         } // for ( j=0 ; j < _C_OPS_SIZE; j++ )
@@ -586,15 +574,30 @@ int process_trajectories(double _from_time, double _to_time,
 				normalize(Y_tmp);
 
                 out_psi = Y_tmp / normsqrt(Y_tmp);
-
+#ifdef __USE_DENSE_EXPECT_OPERATORS
+				if(use_expecation_operator == 0)
+				{
+					ev = expect_cnv_denmat< simpleComplex<double>, _WV_LEAD_DIM_SQR, _WV_LEAD_DIM>(_WV_LEAD_DIM, _WV_LEAD_DIM, id_operator, out_psi);		
+				}
+				
 				if(use_expecation_operator == 1)
+				{
 					ev = expect_cnv_denmat< simpleComplex<double>, _WV_LEAD_DIM_SQR, _WV_LEAD_DIM>(_WV_LEAD_DIM, _WV_LEAD_DIM, expect_operator, out_psi);
-				else
-					ev = expect_cnv_denmat< simpleComplex<double>, _WV_LEAD_DIM_SQR, _WV_LEAD_DIM>(_WV_LEAD_DIM, _WV_LEAD_DIM, id_operator, out_psi);
+				}
+#endif				
+#ifdef __USE_SPARSE_CSR_EXPECT_OPERATORS
+				if(use_expecation_operator == 2)
+				{
+					ev = expect_cnv_csrdenmat(expect_operator, Y);
+				}
+#endif
+					//printf("ev=%f\n", ev.re); fflush(stdout);
+					pt_trjs[trj][k].re = ev.re;
+					pt_trjs[trj][k].im = ev.im;
+					//printf("pt_trjs(%d, %d)=%f\n", trj, k, pt_trjs(trj, k).re); fflush(stdout);
 
-                pt_trjs(trj, k) = ev;
 
-            } // for ( k = 1 ; k < N; k++)
+            } // for ( k = 0 ; k < N; k++)
     } // for ( trj = 0 ; trj < Ntrj ; trj++)
 
 
@@ -606,23 +609,55 @@ int process_trajectories(double _from_time, double _to_time,
 
     simpleComplex<double> tmp;
 
-    for ( k = 0 ; k < N; k++)
-    {
-        tmp.re=0; tmp.im=0;
-        for ( trj = 0 ; trj < Ntrj ; trj++)
-        {
-            tmp = tmp + pt_trjs(trj, k);
-        }
-        tmp = tmp / (double)Ntrj;
-        pt_avg_trj[k] = tmp;
-    }
+	if(Ntrj>1)
+	{
+		printf ("process_trajectories: Node [%d] Proc.Name [%s]:  average local trajectories. \n", host_rank, processor_name);
+		fflush(stdout);
+		for ( k = 0 ; k < N; k++)
+		{
+			tmp.re=0; tmp.im=0;
+			for ( trj = 0 ; trj < Ntrj ; trj++)
+			{
+				tmp = tmp + pt_trjs[trj][k];
+			}
+			tmp = tmp / (double)Ntrj;
+			pt_avg_trj[k] = tmp;
+		}
+	}
+	else
+	{
+		printf ("process_trajectories: Node [%d] Proc.Name [%s]:  copy single trajectory to output variable. \n", host_rank, processor_name);
+		fflush(stdout);
+		for ( k = 0 ; k < N; k++)
+		{
+			//printf("pt_trjs(0,k)=%f", pt_trjs(0,k).re);
+			pt_avg_trj[k] = pt_trjs[0][k];
+		}
+	}
 
 
 	printf ("process_trajectories: Node [%d] Proc.Name [%s]:  send TRJ to master node \n", host_rank, processor_name);
+	fflush(stdout);
 
-	MPI_Send(&pt_avg_trj.m[0], 2*N, MPI_DOUBLE, MASTER_NODE, TRJ_DATA_TAG, MPI_COMM_WORLD);
 
+/*	
+		for( i = 0 ; i < N ; i++)
+			{
+				printf("data in nodetrj[%d] = %f \n", i, pt_avg_trj[i].re);
+				fflush(stdout);
+			}
+	*/	
+	
+	MPI_Send(&pt_avg_trj[0], sizeof(pt_avg_trj), MPI_BYTE, MASTER_NODE, TRJ_DATA_TAG, MPI_COMM_WORLD);
+
+	for(trj = 0; trj < Ntrj; trj++)
+	{
+		delete [] pt_trjs[trj];
+	}
+	delete [] pt_trjs;			
+	
 	printf ("process_trajectories: Node [%d] Proc.Name [%s]:  end \n", host_rank, processor_name);
+	fflush(stdout);
 
 	return 0;
 }
@@ -632,7 +667,8 @@ template<size_t N, size_t Ntrj, size_t _WV_LEAD_DIM, size_t _WV_LEAD_DIM_SQR, si
 int process_codes(int c1, int c2, int host_rank, 
 						 double _from_time, 
 						 double _to_time,
-						 int use_colappse_operator, int use_expecation_operator)
+						 int use_colappse_operator, int use_expecation_operator,
+						 extra_options opt)
 {
 	int ret_code = 0;
 
@@ -648,7 +684,8 @@ int process_codes(int c1, int c2, int host_rank,
 		printf("Work Node Node [%d] Proc.Name [%s] -- cmd_RNG_TEST\n", host_rank, processor_name);
 		process_trajectories<N, Ntrj, _WV_LEAD_DIM, _WV_LEAD_DIM_SQR, _C_OPS_SIZE>( _from_time, _to_time, 
 			host_rank, 
-			use_colappse_operator, use_expecation_operator );
+			use_colappse_operator, use_expecation_operator,
+			opt	);
 	}
 
 	if(cmd_code[0] == cmd_EXIT)
@@ -665,13 +702,15 @@ template<size_t N, size_t Ntrj, size_t _WV_LEAD_DIM, size_t _WV_LEAD_DIM_SQR, si
 int mpi_main(int argc, char *argv[], int verbose_mode,
 						 double _from_time, 
 						 double _to_time,
-						 int use_colappse_operator, int use_expecation_operator)
+						 int use_colappse_operator, int use_expecation_operator,
+						 extra_options opt)
 {
 	int i, k, lvl = 0;
 	int max_buf_len = 0, errlvl = 0;
 	int host_rank, num_procs;
 	
-	struct uMatrix<simpleComplex<double>, Ntrj> glb_trjs;
+	simpleComplex<double> **glb_trjs;
+	
 	uVector< simpleComplex<double>, N > final_avg_trj;
 
 
@@ -680,6 +719,8 @@ int mpi_main(int argc, char *argv[], int verbose_mode,
 	MPI_Comm_size(MPI_COMM_WORLD, &num_procs);
 	MPI_Comm_rank(MPI_COMM_WORLD, &host_rank);
 
+
+	
 	MPI_Get_processor_name(processor_name, &max_buf_len);
 
 	if (num_procs < 2)
@@ -692,39 +733,50 @@ int mpi_main(int argc, char *argv[], int verbose_mode,
 
 	if(host_rank == MASTER_NODE)
 	{
+		
+		glb_trjs = new simpleComplex<double>*[num_procs];
+	
+		for(k = 0; k < num_procs; k++)
+			glb_trjs[k] = new simpleComplex<double>[N];
+		
 		printf("Master Node Node [%d] Proc.Name [%s]\n", host_rank, processor_name);
 		printf("Master Node Node [%d] Proc.Name [%s]: N=%d \n", host_rank, processor_name, N);
 
-		send_to_all_nodes(cmd_TRJ_PROC, 0xAFFFFF, num_procs);
-
+		send_to_all_nodes(cmd_TRJ_PROC, GLOBAL_CODE, num_procs);
+	
 		// receive trajectories from computational nodes
 
 		for( k=1; k < num_procs; k++ )
 		{
-			uVector< simpleComplex<double>, N > avg_trj;
-
-			avg_trj.size=N;
+			//uVector< simpleComplex<double>, N > avg_trj;
+			simpleComplex<double> avg_trj[N];
+			//avg_trj.size=N;
+			
 			for( i = 0 ; i < N ; i++)
 			{
 				avg_trj[i].re = 0.0 ;
 				avg_trj[i].im = 0.0 ;
 			}
 
-			MPI_Recv(&avg_trj.m[0], 2*N, MPI_DOUBLE, MPI_ANY_SOURCE, TRJ_DATA_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			
+			//MPI_Recv(&avg_trj.m[0], 2*N, MPI_DOUBLE, MPI_ANY_SOURCE, TRJ_DATA_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			//MPI_Barrier(MPI_COMM_WORLD);
+
+			MPI_Recv(&avg_trj[0], sizeof(avg_trj), MPI_BYTE, MPI_ANY_SOURCE, TRJ_DATA_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
 			for( i = 0 ; i < N ; i++)
 			{
-			 	 glb_trjs(k, i) = avg_trj[i];
+			 	 glb_trjs[k][i] = avg_trj[i];
 			}
 
 
 			printf ("main: Node [%d] Proc.Name [%s]:  recv TRJ from work node \n", host_rank, processor_name);
 			for( i = 0 ; i < N ; i++)
 			{
-				printf("data from node %d in trj[%d] = %f \n", k, i, glb_trjs(k, i).re);
+				printf("data from node %d in trj[%d] = %f \n", k, i, glb_trjs[k][i].re);
 			}
 			printf ("main: Node [%d] Proc.Name [%s]:  end data \n", host_rank, processor_name);
-		}
+		} // for( k=1; k < num_procs; k++ )
 
 		send_to_all_nodes(cmd_EXIT, GLOBAL_CODE, num_procs);
 
@@ -735,29 +787,39 @@ int mpi_main(int argc, char *argv[], int verbose_mode,
 			tmp.re=0; tmp.im=0;
 			for( k=1; k < num_procs; k++ )
 			{
-				tmp = tmp + glb_trjs(k, i).re;
+				tmp = tmp + glb_trjs[k][i].re;
 			}
 			tmp = tmp / (double)(num_procs - 1);
-			glb_trjs(0, i) = tmp;
+			glb_trjs[0][i] = tmp;
 		}
 
 		printf ("main: Node [%d] Proc.Name [%s]:  avg TRJ begin \n", host_rank, processor_name);
 		for( i = 0 ; i < N ; i++)
 		{
-				printf("main: data from node in avg_trj[%d] = %f \n", i, glb_trjs(0, i).re);
+				printf("main: data from node in avg_trj[%d] = %f \n", i, glb_trjs[0][i].re);
 		}
 		printf ("main: Node [%d] Proc.Name [%s]:  avg TRJ end data \n", host_rank, processor_name);
 
 		printf ("main: Node [%d] Proc.Name [%s]:  dump avg TRJ begin data \n", host_rank, processor_name);
 		for( i = 0 ; i < N - 1 ; i++)
 		{
-			printf("%f, ", glb_trjs(0, i).re);
+			printf("%f, ", glb_trjs[0][i].re);
 			if( (i % 10 ) == 0 ) printf("\n");
 		}
-		printf("%f \n", glb_trjs(0, i).re);
+		printf("%f \n", glb_trjs[0][i].re);
 
 		printf ("main: Node [%d] Proc.Name [%s]:  dump avg TRJ end data \n", host_rank, processor_name);
 
+		if(opt.type_output == OUTPUT_FILE)
+		{
+			printf("main: Node [%d] Proc.Name [%s]:  dump avg TRJ to file %s. \n", host_rank, processor_name, opt.file_name);
+		}
+		
+		for(k = 0; k < num_procs; k++)
+		{
+			delete [] glb_trjs[k];
+		}
+		delete [] glb_trjs;
 	} // if(host_rank == MASTER_NODE)
 	else
 	{
@@ -774,10 +836,11 @@ int mpi_main(int argc, char *argv[], int verbose_mode,
 			if(cmd_code[1] == GLOBAL_CODE) // global code
 			{
 				lvl = 0;
-				lvl = process_codes<N,Ntrj,_WV_LEAD_DIM,_WV_LEAD_DIM_SQR,_C_OPS_SIZE>(cmd_code[0], cmd_code[1], 
+				lvl = process_codes<N, Ntrj,_WV_LEAD_DIM,_WV_LEAD_DIM_SQR,_C_OPS_SIZE>(cmd_code[0], cmd_code[1], 
 						host_rank,
 						_from_time, _to_time,
-						use_colappse_operator, use_expecation_operator);
+						use_colappse_operator, use_expecation_operator,
+						opt);
 				if( lvl == cmd_EXIT)
 					break;
 			}
@@ -786,10 +849,11 @@ int mpi_main(int argc, char *argv[], int verbose_mode,
 				if(host_rank == cmd_code[1])
 				{
 					lvl = 0;
-					lvl = process_codes<N,Ntrj,_WV_LEAD_DIM,_WV_LEAD_DIM_SQR,_C_OPS_SIZE>(cmd_code[0], cmd_code[1], 
+					lvl = process_codes<N, Ntrj,_WV_LEAD_DIM,_WV_LEAD_DIM_SQR,_C_OPS_SIZE>(cmd_code[0], cmd_code[1], 
 						host_rank,
 						_from_time, _to_time,
-						use_colappse_operator, use_expecation_operator);
+						use_colappse_operator, use_expecation_operator,
+						opt);
 					if( lvl == cmd_EXIT)
 						break;
 				}

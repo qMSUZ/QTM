@@ -1,5 +1,5 @@
-#ifndef __qtm__
-#define __qtm__
+#ifndef __QTM__
+#define __QTM__
 
 
 /***************************************************************************
@@ -27,18 +27,37 @@
  
 #include "complexnum.h"
  
+#define OUTPUT_FILE 1000 
+#define METADAMS 	2000
+#define METBDF		3000
+
+#define COLLAPSE_OPERATOR 4000
+#define EXPECATION_OPERATOR 4001
+#define COLLAPSE_FUNCTION 4002
+#define EXPECATION_FUNCTION 4003
+
+ 
 typedef simpleComplex<double> dblcmplx;
 
-//extern uMatrix< simpleComplex<double>, 4> c_ops[ 1 ];
-//extern template uVector< simpleComplex<double>, size_t > H;
-//extern simpleComplex<double> alpha[2];
-//extern uVector< simpleComplex<double>, 4> expect_operator;
+
+typedef struct {
+	int type_output;
+	int only_final_trj;
+	int ode_method;
+	int verbose_mode;
+	double tolerance;
+	char *file_name;
+	int (*fnc)(long int *NEQ, double *T, dblcmplx *Y, dblcmplx *YDOT, dblcmplx *RPAR, long int *IPAR);
+	
+} extra_options;
+
 
 template<size_t N, size_t Ntrj, size_t _WV_LEAD_DIM, size_t _WV_LEAD_DIM_SQR, size_t _C_OPS_SIZE>
 int mpi_main(int argc, char *argv[], int verbose_mode,
 						 double _from_time, 
 						 double _to_time,
-						 int use_colappse_operator, int use_expecation_operator);
+						 int use_colappse_operator, int use_expecation_operator,
+						 extra_options opt);
 
 
- #endif // __qtm__
+ #endif // __QTM__

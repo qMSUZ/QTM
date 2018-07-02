@@ -953,14 +953,14 @@ struct simpleComplex<T> expect_cnv_denmat_ver2( size_t sx, size_t sy,  const uVe
 }
 
 template <typename T, size_t _S_ValueSize, size_t _S_RowPtr, size_t _S_ColInd, size_t v_size >
-struct simpleComplex<T> expect_cnv_csrdenmat(const struct uCSRMatrix< simpleComplex<double>, _S_ValueSize, _S_RowPtr, _S_ColInd> &m, const uVector< struct simpleComplex<T>, v_size > &state)
+T expect_cnv_csrdenmat(const struct uCSRMatrix< T, _S_ValueSize, _S_RowPtr, _S_ColInd> &m, const uVector< T, v_size > &state)
 {
     struct simpleComplex<double> r, tmp;
     uVector< simpleComplex<double>, v_size > vtmp;
     size_t i;
 
     for(i=0;i<v_size;i++)
-        vtmp[i] = make_simpleComplex( 0.0,  0.00000 );
+        vtmp[i] = make_simpleComplex( 0.0,  0.0 );
 
     vtmp = mulCSRMatByuVec(m, state);
 
