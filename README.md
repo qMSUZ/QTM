@@ -24,7 +24,7 @@ sudo apt-get install libopenmpi-dev
 
 The current version of QTM package may be downloaded from the repository:
 
-git clone https://github.com/qMSUZ/QTM
+git clone https://github.com/qMSUZ/QTM.git
 
 Let us enter the main catalog:
 
