@@ -22,7 +22,7 @@
  ***************************************************************************/
 
 #include <cstdio>
-
+#include <cmath>
 
 #define __USE_SPARSE_CSR_EXPECT_OPERATORS
 #define __USE_SPARSE_CSR_COLLAPSE_OPERATORS
@@ -68,10 +68,7 @@ int myfex_fnc_f1(	long int *NEQ,
     {
         YDOT[i].re = 0.0;
         YDOT[i].im = 0.0;
-    }
 
-    for ( i=0; i < WAVEVECTOR_LEAD_DIM; i++)
-    {
         for ( j=H.row_ptr[i] ; j < H.row_ptr[i+1] ; j++)
         {
             YDOT[i]= YDOT[i] + (H.values[j] * Y[H.col_ind[j]]);
@@ -84,13 +81,67 @@ int myfex_fnc_f1(	long int *NEQ,
 int prepare_matrices()
 {
 
-#include "data-h.txt"
+	const int N0=8, N1=8, N2=8;
+	double K=1.0;
+	double gamma0=0.1, gamma1=0.1, gamma2=0.4;
+	double alpha=sqrt(3);
+	
+	simpleComplex<double> unity = make_simpleComplex(0.0,1.0);
+	
+	uMatrix< simpleComplex<double>, N0 > d1;
+	uMatrix< simpleComplex<double>, N1 > d2;
+	uMatrix< simpleComplex<double>, N2 > d3;
+	
+	uMatrix< simpleComplex<double>, N0*N1*N2 > a0, C0, num0;
+	uMatrix< simpleComplex<double>, N0*N1*N2 > a1, C1, num1;
+	uMatrix< simpleComplex<double>, N0*N1*N2 > a2, C2, num2;
+	
+	uMatrix< simpleComplex<double>, N0*N1*N2 > H;
+	
+	destroy_operator(d1);
+	eye_of_matrix(d2);
+	eye_of_matrix(d3);
+	a0=tensor(d1,d2,d3);
 
-#include "data-c0.txt"	
-#include "data-c1.txt"	
-#include "data-c2.txt"
+	eye_of_matrix(d1);
+	destroy_operator(d2);
+	eye_of_matrix(d3);
+	a1=tensor(d1,d2,d3);
 
-#include "data-e0.txt"
+	eye_of_matrix(d1);
+	destroy_operator(d2);
+	eye_of_matrix(d3);
+	a2=tensor(d1,d2,d3);
+
+	num0=dagger(a0)*a0;
+	num1=dagger(a1)*a1;
+	num2=dagger(a2)*a2;
+
+	
+	C0=sqrt(2.0*gamma0)*a0;
+	C1=sqrt(2.0*gamma1)*a1;
+	C2=sqrt(2.0*gamma2)*a2;
+	
+	/*
+	vacuum=tensor(basis(N0,0),basis(N1,0),basis(N2,0))
+	D=(alpha*a0.dag()-np.conj(alpha)*a0).expm()
+	psi0=D*vacuum	
+	*/
+	
+	H=unity*K*(a0*dagger(a1)*dagger(a2)-dagger(a0)*a1*a2);
+
+	/*
+	Heff = (H - ((1.0j)/2.0) * (C0.dag()*C0 + C1.dag()*C1 + C2.dag()*C2))	
+	
+*/
+	
+//#include "data-h.txt"
+
+//#include "data-c0.txt"	
+//#include "data-c1.txt"	
+//#include "data-c2.txt"
+
+//#include "data-e0.txt"
 
 	return 0;
 }

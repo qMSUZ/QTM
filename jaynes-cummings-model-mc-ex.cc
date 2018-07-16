@@ -23,9 +23,10 @@
 
 #include <cstdio>
 
-#define __USE_SPARSE_CSR_EXPECT_OPERATORS
+#define __USE_SPARSE_CSR_EXPECT_OPERATORS 2
 //#define __USE_DENSE_COLLAPSE_OPERATORS
-#define __USE_ADAMS
+//#define __USE_ADAMS METADAMS
+#define __USE_BDF METBDF
 
 #include "complexnum.h"
 #include "qtm.h" 
@@ -38,7 +39,9 @@ const size_t WAVEVECTOR_LEAD_DIM_SQR = 80*80;
 uMatrix< simpleComplex<double>, WAVEVECTOR_LEAD_DIM > c_ops[ 1 ];
 uVector< simpleComplex<double>, WAVEVECTOR_LEAD_DIM_SQR > collapse_operator;
 
-uCSRMatrix<simpleComplex<double>, 158, 81, 158 > expect_operator;
+// template <typename T, size_t _S_ValueSize, size_t _S_RowPtr, size_t _S_ColInd>
+
+uCSRMatrix<simpleComplex<double>, 40, 81, 40 > expect_operator;
 uCSRMatrix<simpleComplex<double>, 158, 81, 158> H;
 
 simpleComplex<double> alpha[WAVEVECTOR_LEAD_DIM];
@@ -85,21 +88,31 @@ int prepare_matrices()
 
 int main(int argc, char *argv[])
 {
-	int r = 0;
+	int i, r = 0;
+	simpleComplex<double> moneimag;
+	
+	moneimag.re=0.0;
+	moneimag.im=-1.0;
 
 	prepare_matrices();
 	
-	opt.type_output = OUTPUT_FILE;
+	opt.type_output = OUTPUT_FILE_PYTHON_STYLE;
 	opt.only_final_trj = 1;
-	opt.ode_method = METADAMS;
-	opt.tolerance = 1e-7;
-	opt.file_name = strdup("output-data.txt");
+	//opt.ode_method = __USE_ADAMS;
+	opt.ode_method = __USE_BDF;
+	opt.tolerance = 1e-12;
+	opt.file_name = strdup("output-data-matplotfig.py");
 	opt.fnc = &myfex_fnc_f1;
 	
+
+	for(i=0;i<H._values_size;i++)
+	{
+		H.values[i] = moneimag * H.values[i];
+	}
 	
 	r = mpi_main<N, Ntrj, WAVEVECTOR_LEAD_DIM, WAVEVECTOR_LEAD_DIM_SQR, 0>(argc, argv, 1, 
 	0.0, 35.0, 
-	0, 2, opt);
+	0, __USE_SPARSE_CSR_EXPECT_OPERATORS, opt);
 
 
 	

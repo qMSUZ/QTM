@@ -31,7 +31,7 @@
 #include "qtm.h" 
 
 const size_t COLLAPSE_OPERATORS = 1;
-const size_t Ntrj = 1;
+const size_t Ntrj = 10;
 const size_t N = 100;
 const size_t WAVEVECTOR_LEAD_DIM = 2;
 const size_t WAVEVECTOR_LEAD_DIM_SQR = 4;
@@ -98,7 +98,9 @@ int main(int argc, char *argv[])
     c_ops[0].cols=2;
     c_ops[0].m = collapse_operator;
 	
+	//opt.type_output = OUTPUT_FILE_PYTHON_STYLE;
 	opt.type_output = OUTPUT_FILE;
+	opt.verbose_mode=2;
 	opt.only_final_trj = 1;
 	opt.ode_method = METADAMS;
 	opt.tolerance = 1e-7;

@@ -586,8 +586,27 @@ struct uMatrix<T, SIZE> operator*(const T &s, const struct uMatrix<T, SIZE> &m)
     return vtmp;
 }
 
+
 template <typename T, size_t SIZE>
 struct uMatrix<T, SIZE> operator*(const simpleComplex<T> &s, const struct uMatrix<T, SIZE> &m)
+{
+    unsigned int i, j;
+    struct uMatrix<T, SIZE> vtmp;
+
+    for( i=0 ; i<m.rows ; i++)
+    {
+        for( j=0; j < m.cols ; j++)
+        {
+            vtmp(i,j) = s * m(i,j);
+        } // for( k=0; k < sy ; k++)
+    } // for( i=0 ; i<m.cols ; i++)
+
+    return vtmp;
+}
+
+
+template <typename T, size_t SIZE>
+struct uMatrix<T, SIZE> operator*(const double &s, const struct uMatrix<T, SIZE> &m)
 {
     unsigned int i, j;
     struct uMatrix<T, SIZE> vtmp;
@@ -925,11 +944,11 @@ T expect_cnv_denmat( size_t sx, size_t sy,  const uVector< T, SIZE1 > &m, const 
 
 
 template <typename T, size_t SIZE1, size_t SIZE2 >
-struct simpleComplex<T> expect_cnv_denmat_ver2( size_t sx, size_t sy,  const uVector< struct simpleComplex<T>, SIZE1 > &m, const uVector< struct simpleComplex<T>, SIZE2 > &state)
+T expect_cnv_denmat_ver2( size_t sx, size_t sy,  const uVector<  T, SIZE1 > &m, const uVector< T, SIZE2 > &state)
 {
         size_t i, j, k;
 
-        struct simpleComplex<T> n1, n2, md, md1, md2;
+        T n1, n2, md, md1, md2;
 
         n1.re=0;
         n1.im=0;
@@ -1036,7 +1055,7 @@ T norm( const uVector< struct simpleComplex<T>, SIZE > &m )
     {
         cnj = m[i];
         cnj.im =-cnj.im;
-        tmp = tmp + cnj * m[i];
+        tmp = tmp + (cnj * m[i]);
     }
 
     v = sqrt(tmp.re * tmp.re + tmp.im * tmp.im);
@@ -1154,7 +1173,7 @@ inline ostream& operator<< (ostream & output, const simpleComplex<T> & c)
 
 
 //------------------------------------------------------------------------------------------------------------
-//  global output operator<< for simpleCmplxMatrix<T>
+//  global output operator<< for uMatrix<T>
 //------------------------------------------------------------------------------------------------------------
 
 
@@ -1174,6 +1193,27 @@ ostream& operator<< (ostream & output, const uMatrix<T, SIZE> &c)
     else
       output << setw(width) << c(i,j);
   }
+#undef width  
+  return output;
+}
+
+//------------------------------------------------------------------------------------------------------------
+//  global output operator<< for uVector<T>
+//------------------------------------------------------------------------------------------------------------
+
+
+template <typename T, size_t SIZE>
+ostream& operator<< (ostream & output, const uVector<T, SIZE> &c)
+{
+  unsigned int i, j;
+#define width 4
+  simpleComplex<T> nc;
+
+  output << setw(width) << c[i] << " ";
+  for (i = 1; i < c.size-1; ++i) {
+      output << setw(width) << c[i] << ", ";
+  }
+      output << setw(width) << c[i] << endl;
 #undef width  
   return output;
 }
@@ -1338,6 +1378,36 @@ void transpose_of_matrix( uMatrix< T, SIZE > &m )
     }
 }
 
+template <typename T, size_t SIZE>
+uMatrix< T, SIZE > dagger( uMatrix< T, SIZE > &_m )
+{
+	
+	uMatrix< T, SIZE > m = _m;
+	
+    T a, b;
+    size_t i,j;
+
+    if(m.rows == m.cols)
+    {
+        for(i=0 ; i<m.rows ; i++)
+        {
+            for(j=i ; j<m.cols ; j++)
+            {
+                a = m(i,j);
+                a.im = -a.im;
+				
+                b = m(j,i);
+                b.im = -b.im;
+				
+                m(i, j) = b;
+                m(j, i) = a;
+            }
+        }
+    }
+	
+	return m;
+}
+
 
 template <typename T, size_t SIZE>
 void destroy_operator( uMatrix< T, SIZE > &m )
@@ -1435,6 +1505,22 @@ void zerovector( uVector< struct simpleComplex<T>, SIZE > &v)
     }
 }
 
+
+template <typename T, size_t SIZE>
+uMatrix<T, SIZE*SIZE>  tensor(uMatrix<T, SIZE> &m1, uMatrix<T, SIZE> &m2)
+{
+	uMatrix<T, SIZE*SIZE>  tmp;
+	
+	return tmp;
+}
+
+template <typename T, size_t SIZE>
+uMatrix<T, SIZE*SIZE*SIZE>  tensor(uMatrix<T, SIZE> &m1, uMatrix<T, SIZE> &m2,  uMatrix<T, SIZE> &m3)
+{
+	uMatrix<T, SIZE*SIZE*SIZE>  tmp;
+	
+	return tmp;
+}
 
 
 #endif // __complexnum_h__

@@ -92,7 +92,10 @@ run:
 
 run4:
 	mpirun -n 4 qtm.exe
- 
+
+partclean:
+	rm -f unitary-mc-ex.o triham-mc-ex.o bdpc-ex.o jaynes-cummings-model-mc-ex.o *.exe
+	
 clean:
 	rm -f *.o *.exe
 

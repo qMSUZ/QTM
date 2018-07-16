@@ -23,15 +23,16 @@
 
 #include <cstdio>
 
-#define __USE_DENSE_EXPECT_OPERATORS
-#define __USE_DENSE_COLLAPSE_OPERATORS
-#define __USE_ADAMS
+#define __USE_DENSE_EXPECT_OPERATORS 1
+#define __USE_DENSE_COLLAPSE_OPERATORS 1
+//#define __USE_ADAMS METADAMS
+#define __USE_BDF METBDF
 
 #include "complexnum.h"
 #include "qtm.h" 
 
-const size_t COLLAPSE_OPERATORS = 1;
-const size_t Ntrj = 150;
+const size_t COLLAPSE_OPERATORS = 2;
+const size_t Ntrj = 1;
 const size_t N = 100;
 const size_t WAVEVECTOR_LEAD_DIM = 5;
 const size_t WAVEVECTOR_LEAD_DIM_SQR = 25;
@@ -54,10 +55,15 @@ int myfex_fnc_f1(	long int *NEQ,
 			long int *IPAR)
 {
     // YDOT = H * Y;
-	
-    size_t i, k;
-    //uVector< struct simpleComplex<T>, SIZE2> vtmp ;
 
+    size_t i, k;
+/*	
+	for( i=0; i<WAVEVECTOR_LEAD_DIM ; i++)
+    {
+		printf("%f+%f " , Y[i].re, Y[i].im);
+	}
+	printf("\n");
+*/	
 	for( i=0; i<WAVEVECTOR_LEAD_DIM ; i++)
     {
         YDOT[i].re = 0.0;
@@ -65,17 +71,76 @@ int myfex_fnc_f1(	long int *NEQ,
 		for( k=0; k <  WAVEVECTOR_LEAD_DIM; k++)
         {
             YDOT[i] = YDOT[i] + H[ (i * WAVEVECTOR_LEAD_DIM) + k] * Y[k];
-        } // for( k=0; k < sy ; k++)
-    } // for( i=0 ; i<m.cols ; i++)
+        } // for( k=0; k <  WAVEVECTOR_LEAD_DIM; k++)
+    } // for( i=0; i<WAVEVECTOR_LEAD_DIM ; i++)
+
+/*
+    simpleComplex<double> o0, o1, o2, o3, o4, 
+					   	out0, out1, out2, out3, out4;
+
+    out0.re=0.0; out0.im=0; out1.re=0.0; out1.im=0.0; out2.re=0.0; out2.im=0.0; out3.re=0.0; out3.im=0.0; out4.re=0.0; out4.im=0.0;
+
+    o0.re=0.0;   o0.im=0.0; o1.re=0.0;   o1.im=0.0; o2.re=0.0;   o2.im=0.0; o3.re=0.0;   o3.im=0.0; o4.re=0.0;   o4.im=0.0;
+    o0 = Y[0] * H[0];
+    o1 = Y[1] * H[1];
+    o2 = Y[2] * H[2];
+    o3 = Y[3] * H[3];
+    o4 = Y[4] * H[4];
+    out0 = o0 + o1 + o2 + o3 + o4;
+
+    o0.re=0.0;   o0.im=0.0; o1.re=0.0;   o1.im=0.0; o2.re=0.0;   o2.im=0.0; o3.re=0.0;   o3.im=0.0; o4.re=0.0;   o4.im=0.0;
+    o0 = Y[0] * H[5];
+    o1 = Y[1] * H[6];
+    o2 = Y[2] * H[7];
+    o3 = Y[3] * H[8];
+    o4 = Y[4] * H[9];
+	out1 = o0 + o1 + o2 + o3 + o4;
 	
+    o0.re=0.0;   o0.im=0.0; o1.re=0.0;   o1.im=0.0; o2.re=0.0;   o2.im=0.0; o3.re=0.0;   o3.im=0.0; o4.re=0.0;   o4.im=0.0;
+    o0 = Y[0] * H[10];
+    o1 = Y[1] * H[11];
+    o2 = Y[2] * H[12];
+    o3 = Y[3] * H[13];
+    o4 = Y[4] * H[14];
+	out2 = o0 + o1 + o2 + o3 + o4;
+
+    o0.re=0.0;   o0.im=0.0; o1.re=0.0;   o1.im=0.0; o2.re=0.0;   o2.im=0.0; o3.re=0.0;   o3.im=0.0; o4.re=0.0;   o4.im=0.0;
+    o0 = Y[0] * H[15];
+    o1 = Y[1] * H[16];
+    o2 = Y[2] * H[17];
+    o3 = Y[3] * H[18];
+    o4 = Y[4] * H[19];
+	out3 = o0 + o1 + o2 + o3 + o4;
+
+    o0.re=0.0;   o0.im=0.0; o1.re=0.0;   o1.im=0.0; o2.re=0.0;   o2.im=0.0; o3.re=0.0;   o3.im=0.0; o4.re=0.0;   o4.im=0.0;
+    o0 = Y[0] * H[20];
+    o1 = Y[1] * H[21];
+    o2 = Y[2] * H[22];
+    o3 = Y[3] * H[23];
+    o4 = Y[4] * H[24];
+	out4 = o0 + o1 + o2 + o3 + o4;
+	
+    YDOT[0] = out0;
+    YDOT[1] = out1;
+    YDOT[2] = out2;
+    YDOT[3] = out3;
+    YDOT[4] = out4;
+*/	
 
 	return 0;
 }
 
+
+
 int main(int argc, char *argv[])
 {
-	int r = 0;
-
+	int i, r = 0;
+	
+	simpleComplex<double> moneimag;
+	
+	moneimag.re=0.0;
+	moneimag.im=-1.0;
+	
 	zerovector(co0);
 	zerovector(co1);
 
@@ -116,6 +181,11 @@ int main(int argc, char *argv[])
 	H[18] = make_simpleComplex( 3.0, -13.337209302325581 );
 	H[24] = make_simpleComplex( 4.0, -16.480620155038761);
 	
+	for(i=0;i<WAVEVECTOR_LEAD_DIM_SQR;i++)
+	{
+		H[i] = moneimag * H[i];
+	}
+	
 	c_ops[0].rows=5;
     c_ops[0].cols=5;
     c_ops[0].m = co0;
@@ -125,18 +195,19 @@ int main(int argc, char *argv[])
     c_ops[1].m = co1;
 	
 	opt.type_output = OUTPUT_FILE;
+	opt.verbose_mode = 2;
 	opt.only_final_trj = 1;
-	opt.ode_method = METADAMS;
+	opt.ode_method = __USE_BDF;
+	//opt.ode_method = __USE_ADAMS;
 	opt.tolerance = 1e-7;
 	opt.file_name = strdup("output-data.txt");
 	opt.fnc = &myfex_fnc_f1;
 	
-	
+
 	r = mpi_main<N, Ntrj, 
 		WAVEVECTOR_LEAD_DIM, WAVEVECTOR_LEAD_DIM_SQR, COLLAPSE_OPERATORS>(argc, argv, 1, 
 		0.0, 0.8,
-		1, 1, opt);
-
+		__USE_DENSE_COLLAPSE_OPERATORS, __USE_DENSE_EXPECT_OPERATORS, opt);
 
 	
 	return r;

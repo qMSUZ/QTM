@@ -1,11 +1,12 @@
 #ifndef __QTM__
 #define __QTM__
 
-
 /***************************************************************************
  *   Copyright (C) 2017 -- 2018 by Marek Sawerwain                         *
  *                                         <M.Sawerwain@gmail.com>         *
- *                                                                         *
+ *							   and Joanna Wiśniewska                       *
+ *                                         <jwisniewska@wat.edu.pl>        *
+ *                                                                         * 
  *   Part of the Quantum Trajectory Method:                                *
  *   https://github.com/qMSUZ/QTM                                          *
  *                                                                         *
@@ -28,6 +29,7 @@
 #include "complexnum.h"
  
 #define OUTPUT_FILE 1000 
+#define OUTPUT_FILE_PYTHON_STYLE 1001
 #define METADAMS 	2000
 #define METBDF		3000
 
