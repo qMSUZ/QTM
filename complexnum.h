@@ -534,6 +534,21 @@ const uVector< struct simpleComplex<T>, SIZE > operator/(const uVector< struct s
 }
 
 template <typename T, size_t SIZE>
+const uVector< struct simpleComplex<T>, SIZE > operator/(const uVector< struct simpleComplex<T>, SIZE > &v, const struct simpleComplex<T> &a)
+{
+   unsigned  int i;
+
+    uVector< struct simpleComplex<T>, SIZE > vtmp;
+    for(i=0;i<v.size;i++)
+    {
+        vtmp[i] = v[i] / a;
+    }
+
+    return vtmp;
+}
+
+
+template <typename T, size_t SIZE>
 struct uMatrix<T, SIZE> operator+(const struct uMatrix<T, SIZE> &m1, const struct uMatrix<T, SIZE> &m2)
 {
     unsigned int i, j;
@@ -778,6 +793,50 @@ struct simpleComplex<T> expect( size_t sx, size_t sy,  const uVector< struct sim
         return n1;
 }
 
+template <typename T, size_t SIZE>
+struct simpleComplex<T> expect( size_t sx, size_t sy, uMatrix< simpleComplex<T>, SIZE > &m, const uVector< struct simpleComplex<T>, SIZE > &state)
+{
+        size_t i, j, k;
+
+        struct simpleComplex<T> n1, n2;
+
+        uVector < struct simpleComplex<T>, SIZE*SIZE > tmp;
+
+
+        for(k=0; k < sy ; k++)
+        {
+            tmp[k] = make_simpleComplex(0.0, 0.0);
+        }
+
+
+        for(i=0 ; i<sx ; i++)
+        {
+            for(j=0; j < sy; j++)
+            {
+                for( k=0; k < sy ; k++)
+                {
+                    n1 = tmp[i*sy+j];
+
+                    n2 = ( m.m[i*sy+k] * state[k*sy+j] );
+
+                    tmp[i*sy+j] = n1 + n2;
+                }
+            }
+        }
+
+        n1.re=0;
+        n1.im=0;
+
+        for(k=0; k < sy ; k++)
+        {
+           //cout << " i: " << k*sy + k;
+
+           n1 = n1 + tmp[ k*sy + k ];
+        }
+
+        return n1;
+}
+
 #if 0
 template <typename T>
 struct simpleComplex<T> expect( int sx, int sy,  struct simpleComplex<T> m[], struct simpleComplex<T> state[] )
@@ -942,6 +1001,64 @@ T expect_cnv_denmat( size_t sx, size_t sy,  const uVector< T, SIZE1 > &m, const 
 
 }
 
+template <typename T, size_t SIZE1, size_t SIZE2 >
+T expect_cnv_denmat( size_t sx, size_t sy,  const uMatrix< T, SIZE2 > &m, const uVector< T, SIZE2 > &state)
+{
+        size_t i, j, k;
+
+        T n1, n2;
+
+        //const unsigned int csize = sx*sy;
+
+        uVector< T, SIZE1 > tmp ;
+        uVector< T, SIZE1 > matden ;
+
+
+        for(k=0; k < sx*sy ; k++)
+        {
+            tmp[k] = make_simpleComplex(0.0, 0.0);
+        }
+
+        for(i=0 ; i<sx ; i++)
+        {
+            for(j=0; j < sy; j++)
+            {
+                n1 = state[i];
+                n2 = state[j];
+                n2.im = -n2.im;
+                matden[ i*sy+j ] = n1 * n2;
+            }
+        }
+
+        //print_Y( matden );
+
+        for(i=0 ; i<sx ; i++)
+        {
+            for(j=0; j < sy; j++)
+            {
+                for( k=0; k < sy ; k++)
+                {
+                    n1 = tmp[i*sy+j];
+
+                    n2 = ( m.m[i*sy+k] * matden[k*sy+j] );
+
+                    tmp[i*sy+j] = n1 + n2;
+                }
+            }
+        }
+
+        n1.re=0;
+        n1.im=0;
+
+        for(k=0; k < sy ; k++)
+        {
+           //cout << " i: " << k*sy + k;
+
+           n1 = n1 + tmp[ k*sy + k ];
+        }
+
+        return n1;
+}
 
 template <typename T, size_t SIZE1, size_t SIZE2 >
 T expect_cnv_denmat_ver2( size_t sx, size_t sy,  const uVector<  T, SIZE1 > &m, const uVector< T, SIZE2 > &state)

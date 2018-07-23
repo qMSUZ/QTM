@@ -32,7 +32,7 @@
 #include "qtm.h" 
 
 const size_t COLLAPSE_OPERATORS = 2;
-const size_t Ntrj = 1;
+const size_t Ntrj = 200;
 const size_t N = 100;
 const size_t WAVEVECTOR_LEAD_DIM = 5;
 const size_t WAVEVECTOR_LEAD_DIM_SQR = 25;
@@ -186,6 +186,7 @@ int main(int argc, char *argv[])
 		H[i] = moneimag * H[i];
 	}
 	
+	
 	c_ops[0].rows=5;
     c_ops[0].cols=5;
     c_ops[0].m = co0;
@@ -194,13 +195,17 @@ int main(int argc, char *argv[])
     c_ops[1].cols=5;
     c_ops[1].m = co1;
 	
-	opt.type_output = OUTPUT_FILE;
-	opt.verbose_mode = 2;
+	//opt.type_output = OUTPUT_FILE;
+	opt.type_output = OUTPUT_FILE_PYTHON_STYLE;
+	opt.state_of_trj_output = 0;
+	opt.rnd_test_retry=10;
+	opt.verbose_mode = 0;
 	opt.only_final_trj = 1;
 	opt.ode_method = __USE_BDF;
 	//opt.ode_method = __USE_ADAMS;
 	opt.tolerance = 1e-7;
-	opt.file_name = strdup("output-data.txt");
+	//opt.file_name = strdup("output-data.txt");
+	opt.file_name = strdup("output-data-matplotfig.py");	
 	opt.fnc = &myfex_fnc_f1;
 	
 

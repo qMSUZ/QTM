@@ -100,7 +100,9 @@ int main(int argc, char *argv[])
 	
 	//opt.type_output = OUTPUT_FILE_PYTHON_STYLE;
 	opt.type_output = OUTPUT_FILE;
-	opt.verbose_mode=2;
+	opt.state_of_trj_output = OUTPUT_STATE_OF_TRJ_FILE;
+	opt.rnd_test_retry=10;
+	opt.verbose_mode=1;
 	opt.only_final_trj = 1;
 	opt.ode_method = METADAMS;
 	opt.tolerance = 1e-7;

@@ -30,6 +30,7 @@
  
 #define OUTPUT_FILE 1000 
 #define OUTPUT_FILE_PYTHON_STYLE 1001
+#define OUTPUT_STATE_OF_TRJ_FILE 1500 
 #define METADAMS 	2000
 #define METBDF		3000
 
@@ -38,13 +39,19 @@
 #define COLLAPSE_FUNCTION 4002
 #define EXPECATION_FUNCTION 4003
 
+#define TRJ_PERFECT 80
+#define TRJ_GOOD_WITH_COLLAPSE 71
+#define TRJ_BAD 66
+#define TRJ_UNKNOWN 85
  
 typedef simpleComplex<double> dblcmplx;
 
 
 typedef struct {
 	int type_output;
+	int state_of_trj_output;
 	int only_final_trj;
+	int rnd_test_retry;
 	int ode_method;
 	int verbose_mode;
 	double tolerance;
@@ -59,7 +66,7 @@ int mpi_main(int argc, char *argv[], int verbose_mode,
 						 double _from_time, 
 						 double _to_time,
 						 int use_colappse_operator, int use_expecation_operator,
-						 extra_options opt);
+						 extra_options &opt);
 
 
  #endif // __QTM__

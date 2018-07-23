@@ -1,6 +1,8 @@
 /***************************************************************************
  *   Copyright (C) 2017 -- 2018 by Marek Sawerwain                         *
  *                                         <M.Sawerwain@gmail.com>         *
+ *							   and Joanna Wiśniewska                       *
+ *                                         <jwisniewska@wat.edu.pl>        *
  *                                                                         *
  *   Part of the Quantum Trajectory Method:                                *
  *   https://github.com/qMSUZ/QTM                                          *
@@ -192,7 +194,7 @@ void _small_delay(unsigned int mseconds)
 	while (goal > clock()) { };
 }
 
-int rng_test_1(int host_rank)
+int rng_test_1(int host_rank, extra_options &opt)
 {
     int i;
 
@@ -207,9 +209,12 @@ int rng_test_1(int host_rank)
 	
 	
 
-    for(i = 0 ; i < 10 ; i++)
+    for(i = 0 ; i < opt.rnd_test_retry ; i++)
     {
-        printf ("rng_test: Node [%d] Proc.Name [%s]: %d %f \n", host_rank, processor_name, i, lfsr113_genRand_asDouble());
+		if(opt.verbose_mode>=1)
+		{
+         printf ("rng_test: Node [%d] Proc.Name [%s]: %d %f \n", host_rank, processor_name, i, lfsr113_genRand_asDouble());
+		}
     }
 
     return 0;
@@ -270,7 +275,7 @@ template<size_t N, size_t Ntrj, size_t _WV_LEAD_DIM, size_t _WV_LEAD_DIM_SQR, si
 int process_trajectories(double _from_time, double _to_time,
 						 int host_rank,
 						 int use_colappse_operator, int use_expecation_operator,
-						 extra_options opt)
+						 extra_options &opt)
 {
 	int i = 0, j=0, k = 0, k_ons = 0, trj = 0, odesolverstate = 0, ode_norm_steps = 5, cnt = 0;
 
@@ -290,11 +295,16 @@ int process_trajectories(double _from_time, double _to_time,
 
     //struct uMatrix<simpleComplex<double>, Ntrj> pt_trjs;
 	simpleComplex<double> **pt_trjs;
+	char *state_of_trjs;
 	
 	pt_trjs = new simpleComplex<double>*[Ntrj];
+	state_of_trjs = new char[Ntrj];
 	
 	for(trj = 0; trj < Ntrj; trj++)
+	{
 		pt_trjs[trj] = new simpleComplex<double>[N];
+		state_of_trjs[trj]=TRJ_PERFECT;
+	}
 		
 
 	
@@ -323,11 +333,14 @@ int process_trajectories(double _from_time, double _to_time,
 	
 	lfsr113_generator_init(seed0, seed1, seed2, seed3);
 	
-	printf ("process_trajectories: Node [%d] Proc.Name [%s]: begin \n", host_rank, processor_name);
-	fflush(stdout);
+	if(opt.verbose_mode >= 1)
+	{
+		printf ("process_trajectories: Node [%d] Proc.Name [%s]: begin \n", host_rank, processor_name);
+		fflush(stdout);
+	}
 
 
-    uVector< simpleComplex<double>, N > P;
+    uVector< simpleComplex<double>, _C_OPS_SIZE > P;
 
     simpleComplex<double> T ;
     simpleComplex<double> T_prev ;
@@ -397,7 +410,7 @@ int process_trajectories(double _from_time, double _to_time,
 		rwork[6] = 0;// min step
 		
 		iwork[4] = 12; // order
-		iwork[5] = 512; // nsteps
+		iwork[5] = 1; // nsteps
 		iwork[6] = 2; 
 
 		}
@@ -442,14 +455,22 @@ int process_trajectories(double _from_time, double _to_time,
 		}
 
 
-	printf ("process_trajectories: Node [%d] Proc.Name [%s]:  tlist done \n", host_rank, processor_name);
-	fflush(stdout);
+	if(opt.verbose_mode >= 1)
+	{
+		printf ("process_trajectories: Node [%d] Proc.Name [%s]:  tlist done \n", host_rank, processor_name);
+		fflush(stdout);
+	}
 
 	for ( trj = 0 ; trj < Ntrj ; trj++)
     {
         mu = lfsr113_genRand_asDouble();
         nu = lfsr113_genRand_asDouble();
-		//printf ("process_trajectories: Node [%d] Proc.Name [%s]: trj %d: mu=%f nu=%f.\n", host_rank, processor_name, trj, mu, nu);
+		
+		if(opt.verbose_mode >= 1)
+		{
+			printf ("process_trajectories: Node [%d] Proc.Name [%s]: trj %d: mu=%f nu=%f.\n", host_rank, processor_name, trj, mu, nu);
+			fflush(stdout);
+		}
 
         for( i = 0 ; i < _WV_LEAD_DIM ; i++)
         {
@@ -492,8 +513,6 @@ int process_trajectories(double _from_time, double _to_time,
 				else
 					tout = tlist[k].re;
 
-				//rwork[0]=tout;
-
 		
                 while( T.re < tout )
                 {
@@ -508,25 +527,23 @@ int process_trajectories(double _from_time, double _to_time,
 					
 				    //cout << "norm2_prev=" << norm2_prev << "Y=" << Y << endl;
 					
-					//itask=1;
-					//rwork[1]=tout;
+					itask=2;
+					rwork[1]=T.re;
 					odesolverstate = zvode_method_for_mc<double,_WV_LEAD_DIM,_WV_LEAD_DIM>(h, tout, 1,  T, Y, opt.fnc);
-						
-/*						zvode_((fncFP)opt.fnc,
-			&neq, &Y.m[0], &T.re, &tout, &itol, &rtol_val, &atol_val, &itask,
-			&istate, &iopt, zwork, &lzw, rwork, &lrw, iwork, &liw,
-			NULL,
-			&mf, &rpar, &ipar);*/
-
-					
+									
 					//printf ("process_trajectories: node [%d] Proc.Name [%s], odesolverstate %d istate %d itask %d\n", host_rank, processor_name, odesolverstate, istate, itask);
                     norm2_psi = norm( Y );
 
                     if( (norm2_psi <= mu) && (_C_OPS_SIZE > 0) )
                     {
-						printf ("process_trajectories: node [%d] Proc.Name [%s]:  %s \n", host_rank, processor_name, "Collpase has occured.");
-						fflush(stdout);
+						if(opt.verbose_mode >= 1)
+						{
+							printf ("process_trajectories: node [%d] Proc.Name [%s]:  %s \n", host_rank, processor_name, "Collpase has occured.");
+							fflush(stdout);
+						}
 
+						state_of_trjs[trj]=TRJ_GOOD_WITH_COLLAPSE;
+						
                         T_final = T ;
                         cnt = 0 ;
 
@@ -543,15 +560,18 @@ int process_trajectories(double _from_time, double _to_time,
                             T = T_prev ;
 
 							saveitask=itask;
-							itask=1;
-							//rwork[1]=;
+							itask=2;
+							rwork[1]=T_guess.re;
 							
 							odesolverstate = zvode_method_for_mc<double,_WV_LEAD_DIM,_WV_LEAD_DIM>(h, T_guess.re, 1, T, Y, opt.fnc);
 							
 							itask=saveitask;
-							
-							printf ("process_trajectories: Node [%d] Proc.Name [%s]: istate=%d %s \n", host_rank, processor_name, istate, "zvode_method_for_mc collapse call 2");
-							fflush(stdout);
+						
+							if(opt.verbose_mode >= 1)
+							{								
+								printf ("process_trajectories: Node [%d] Proc.Name [%s]: istate=%d %s \n", host_rank, processor_name, istate, "zvode_method_for_mc collapse call 2");
+								fflush(stdout);
+							}
 
 
                             norm2_guess = norm( Y ) ;
@@ -575,12 +595,19 @@ int process_trajectories(double _from_time, double _to_time,
 
                         if (cnt > ode_norm_steps)
                         {
-							printf ("process_trajectories: Node [%d] Proc.Name [%s]:  %s \n", host_rank, processor_name, "Norm tolerance not reached. Increase accuracy of ODE solver or norm_steps.");
-							fflush(stdout);
+							state_of_trjs[trj]=TRJ_UNKNOWN;
+							
+							if(opt.verbose_mode >=1)
+							{
+								printf ("process_trajectories: Node [%d] Proc.Name [%s]:  %s \n", host_rank, processor_name, "Norm tolerance not reached. Increase accuracy of ODE solver or norm_steps.");
+								fflush(stdout);
+							}
                             break;
                         }
                         else
                         {
+							state_of_trjs[trj]=TRJ_BAD;
+							
 							printf ("process_trajectories: Node [%d] Proc.Name [%s]:  %s \n", host_rank, processor_name, "Norm tolerance is reached.");
 							fflush(stdout);
 
@@ -588,41 +615,60 @@ int process_trajectories(double _from_time, double _to_time,
 
 						
 						if(_C_OPS_SIZE>0)
-						{						
+						{		
+							if(opt.verbose_mode >= 1)
+							{
+								printf ("process_trajectories: Node [%d] Proc.Name [%s]:  %s \n", host_rank, processor_name, "looking for collapse operator");
+								fflush(stdout);
+							}
+							
 							for ( j = 0 ; j < _C_OPS_SIZE; j++ )
 							{
 							#ifdef __USE_DENSE_COLLAPSE_OPERATORS
 								Y_tmp = c_ops[j] * Y ;
 							#endif
 							#ifdef __USE_SPARSE_CSR_COLLAPSE_OPERATORS
+								Y_tmp = mulCSRMatByuVec(c_ops[j], Y);
 							#endif
 								P[j].re = norm ( Y_tmp );
+								P[j].im = 0.0;
 							}
 						
-							P = P / sum(P).re;
+							normalize(P);
 							sump = 0.0 ;
 
 							for ( j=0 ; j < _C_OPS_SIZE; j++ )
 							{
 								if ( (sump <= nu) && (nu < (sump + P[j].re) ) )
 								{
+									if(opt.verbose_mode >= 1)
+									{
+										printf ("process_trajectories: Node [%d] Proc.Name [%s]:  %s %d %s\n", host_rank, processor_name, "collapse operator ",j," is used.");
+										fflush(stdout);
+									}
 								#ifdef __USE_DENSE_COLLAPSE_OPERATORS 															
 									Y = c_ops[j] * Y ;  
 								#endif								
 								#ifdef __USE_SPARSE_CSR_COLLAPSE_OPERATORS
+									Y = mulCSRMatByuVec(c_ops[j], Y);
 								#endif
 								}
 								sump = sump + P[j].re ;
 							} // for ( j=0 ; j < _C_OPS_SIZE; j++ )
 						} // if(_C_OPS_SIZE>0)
-                        // new random numbers
+                        
+						// new random numbers
                         mu = lfsr113_genRand_asDouble();
                         nu = lfsr113_genRand_asDouble();
-
+						if(opt.verbose_mode >= 1)
+						{
+							printf ("process_trajectories: Node [%d] Proc.Name [%s]: trj %d:  new mu=%f nu=%f.\n", host_rank, processor_name, trj, mu, nu);
+							fflush(stdout);
+						}
                         normalize(Y);
 
                      // reset, first call to zvode
-                     itask = 1 ;
+                     //itask = 1 ;
 
                     } // if(norm2_psi <= mu )
 
@@ -696,8 +742,11 @@ int process_trajectories(double _from_time, double _to_time,
 	}
 
 
-	printf ("process_trajectories: Node [%d] Proc.Name [%s]:  send TRJ to master node \n", host_rank, processor_name);
-	fflush(stdout);
+	if(opt.verbose_mode >= 1)
+	{
+		printf ("process_trajectories: Node [%d] Proc.Name [%s]:  send TRJ to master node \n", host_rank, processor_name);
+		fflush(stdout);
+	}
 
 
 /*	
@@ -708,6 +757,32 @@ int process_trajectories(double _from_time, double _to_time,
 			}
 	*/	
 	
+	if(opt.state_of_trj_output == OUTPUT_STATE_OF_TRJ_FILE )
+	{
+			FILE *foutput;
+			char filename[255];
+			filename[0]=0;
+			
+			sprintf(&filename[0],"state-of-trjs-%d-host-%d.dat", Ntrj, host_rank);
+			
+			if(opt.verbose_mode >= 1)
+			{
+				printf ("process_trajectories: Node [%d] Proc.Name [%s]:  dump state of TRJs to file: %s \n", host_rank, processor_name, &filename[0]);
+				fflush(stdout);
+			}
+
+			
+			foutput = fopen(filename, "w");
+					
+			for(trj = 0; trj < Ntrj; trj++)
+			{
+				fprintf(foutput, "%c", state_of_trjs[trj]);
+			}
+		
+			fclose(foutput);
+		
+	}
+	
 	MPI_Send(&pt_avg_trj[0], sizeof(pt_avg_trj), MPI_BYTE, MASTER_NODE, TRJ_DATA_TAG, MPI_COMM_WORLD);
 
 	for(trj = 0; trj < Ntrj; trj++)
@@ -716,8 +791,13 @@ int process_trajectories(double _from_time, double _to_time,
 	}
 	delete [] pt_trjs;			
 	
-	printf ("process_trajectories: Node [%d] Proc.Name [%s]:  end \n", host_rank, processor_name);
-	fflush(stdout);
+	delete [] state_of_trjs;
+	
+	if(opt.verbose_mode >= 1)
+	{
+		printf ("process_trajectories: node [%d] Proc.Name [%s]:  end \n", host_rank, processor_name);
+		fflush(stdout);
+	}
 
 	return 0;
 }
@@ -728,29 +808,38 @@ int process_codes(int c1, int c2, int host_rank,
 						 double _from_time, 
 						 double _to_time,
 						 int use_colappse_operator, int use_expecation_operator,
-						 extra_options opt)
+						 extra_options &opt)
 {
 	int ret_code = 0;
 
 	if(cmd_code[0] == cmd_RNG_TEST)
 	{
-		printf("Work Node Node [%d] Proc.Name [%s] -- cmd_RNG_TEST\n", host_rank, processor_name);
-		rng_test_1( host_rank );
+		if(opt.verbose_mode >= 1)
+		{
+			printf("process_codes: node [%d] Proc.Name [%s] -- cmd_RNG_TEST\n", host_rank, processor_name);
+		}
+		rng_test_1( host_rank, opt );
 	} //  if(cmd_code[0] == cmd_RNG_TEST)
 
 
 	if(cmd_code[0] == cmd_TRJ_PROC)
 	{
-		printf("Work Node Node [%d] Proc.Name [%s] -- cmd_RNG_TEST\n", host_rank, processor_name);
+		if(opt.verbose_mode >= 1)
+		{
+			printf("process_codes: node [%d] Proc.Name [%s] -- cmd_TRJ_PROC\n", host_rank, processor_name);
+		}
 		process_trajectories<N, Ntrj, _WV_LEAD_DIM, _WV_LEAD_DIM_SQR, _C_OPS_SIZE>( _from_time, _to_time, 
 			host_rank, 
 			use_colappse_operator, use_expecation_operator,
 			opt	);
-	}
+	} // if(cmd_code[0] == cmd_TRJ_PROC)
 
 	if(cmd_code[0] == cmd_EXIT)
 	{
-		printf("Work Node Node [%d] Proc.Name [%s] -- cmd_EXIT\n", host_rank, processor_name);
+		if(opt.verbose_mode >= 1)
+		{
+			printf("process_codes: node [%d] Proc.Name [%s] -- cmd_EXIT\n", host_rank, processor_name);
+		}
 		ret_code = cmd_EXIT;
 	} // if(cmd_code[0] == cmd_EXIT)
 
@@ -763,7 +852,7 @@ int mpi_main(int argc, char *argv[], int verbose_mode,
 						 double _from_time, 
 						 double _to_time,
 						 int use_colappse_operator, int use_expecation_operator,
-						 extra_options opt)
+						 extra_options &opt)
 {
 	int i, k, lvl = 0;
 	int max_buf_len = 0, errlvl = 0;
@@ -875,7 +964,7 @@ int mpi_main(int argc, char *argv[], int verbose_mode,
 	
 		if(opt.type_output == OUTPUT_FILE)
 		{
-			printf("main: Node [%d] Proc.Name [%s]:  dump avg TRJ to file %s. \n", host_rank, processor_name, opt.file_name);
+			printf("master: node [%d] Proc.Name [%s]:  dump avg TRJ to file %s (ordinary text file). \n", host_rank, processor_name, opt.file_name);
 
 			FILE *foutput;
 			foutput = fopen(opt.file_name, "w");
@@ -894,7 +983,7 @@ int mpi_main(int argc, char *argv[], int verbose_mode,
 
 		if(opt.type_output == OUTPUT_FILE_PYTHON_STYLE)
 		{
-			printf("main: node [%d] Proc.Name [%s]:  dump avg TRJ to file %s. \n", host_rank, processor_name, opt.file_name);
+			printf("master: node [%d] Proc.Name [%s]:  dump avg TRJ to file %s (Python script). \n", host_rank, processor_name, opt.file_name);
 
 			FILE *foutput;
 			foutput = fopen(opt.file_name, "w");
