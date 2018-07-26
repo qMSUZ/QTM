@@ -205,12 +205,12 @@ int main(int argc, char *argv[])
 	//opt.ode_method = __USE_ADAMS;
 	opt.tolerance = 1e-7;
 	//opt.file_name = strdup("output-data.txt");
-	opt.file_name = strdup("output-data-matplotfig.py");	
+	opt.file_name = strdup("output-data-matplotfig.py");
 	opt.fnc = &myfex_fnc_f1;
 	
 
 	r = mpi_main<N, Ntrj, 
-		WAVEVECTOR_LEAD_DIM, WAVEVECTOR_LEAD_DIM_SQR, COLLAPSE_OPERATORS>(argc, argv, 1, 
+		WAVEVECTOR_LEAD_DIM, WAVEVECTOR_LEAD_DIM_SQR, COLLAPSE_OPERATORS>(argc, argv,
 		0.0, 0.8,
 		__USE_DENSE_COLLAPSE_OPERATORS, __USE_DENSE_EXPECT_OPERATORS, opt);
 

@@ -62,7 +62,7 @@ typedef struct {
 
 
 template<size_t N, size_t Ntrj, size_t _WV_LEAD_DIM, size_t _WV_LEAD_DIM_SQR, size_t _C_OPS_SIZE>
-int mpi_main(int argc, char *argv[], int verbose_mode,
+int mpi_main(int argc, char *argv[],
 						 double _from_time, 
 						 double _to_time,
 						 int use_colappse_operator, int use_expecation_operator,

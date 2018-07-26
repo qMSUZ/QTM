@@ -98,19 +98,20 @@ int main(int argc, char *argv[])
     c_ops[0].cols=2;
     c_ops[0].m = collapse_operator;
 	
-	//opt.type_output = OUTPUT_FILE_PYTHON_STYLE;
-	opt.type_output = OUTPUT_FILE;
+	opt.type_output = OUTPUT_FILE_PYTHON_STYLE;
+	//opt.type_output = OUTPUT_FILE;
 	opt.state_of_trj_output = OUTPUT_STATE_OF_TRJ_FILE;
 	opt.rnd_test_retry=10;
 	opt.verbose_mode=1;
 	opt.only_final_trj = 1;
 	opt.ode_method = METADAMS;
 	opt.tolerance = 1e-7;
-	opt.file_name = strdup("output-data.txt");
+	//opt.file_name = strdup("output-data.txt");
+	opt.file_name = strdup("output-data-matplotfig.py");
 	opt.fnc = &myfex_fnc_f1;
 	
 	
-	r = mpi_main<N, Ntrj, WAVEVECTOR_LEAD_DIM, WAVEVECTOR_LEAD_DIM_SQR, COLLAPSE_OPERATORS>(argc, argv, 1, 
+	r = mpi_main<N, Ntrj, WAVEVECTOR_LEAD_DIM, WAVEVECTOR_LEAD_DIM_SQR, COLLAPSE_OPERATORS>(argc, argv,
 		0, 10, 
 		1, 1, opt);
 	

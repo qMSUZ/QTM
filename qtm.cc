@@ -349,21 +349,19 @@ int process_trajectories(double _from_time, double _to_time,
 
 
     uVector< simpleComplex<double>, _WV_LEAD_DIM > Y;
-    //uVector< simpleComplex<double>, _WV_LEAD_DIM > Y2;
     uVector< simpleComplex<double>, _WV_LEAD_DIM > Y_prev ;
     uVector< simpleComplex<double>, _WV_LEAD_DIM > Y_tmp;
-
     uVector< simpleComplex<double>, _WV_LEAD_DIM > out_psi;
 	
-	uVector< simpleComplex<double>, _WV_LEAD_DIM_SQR> id_operator;
+	//uVector< simpleComplex<double>, _WV_LEAD_DIM_SQR> id_operator;
 
 	zerovector(Y);
-	//zero_vector(Y2);
 	zerovector(Y_prev);
 	zerovector(Y_tmp);
 	zerovector(out_psi);
-	zerovector(id_operator);
+	//zerovector(id_operator);
 	
+	/*
 	k=0;
 	for(i=0;i<_WV_LEAD_DIM;i++)
 	{
@@ -381,7 +379,8 @@ int process_trajectories(double _from_time, double _to_time,
 		}
 		k++;
 	}
-	k=0; i=0; j=0;
+	*/
+	//k=0; i=0; j=0;
 
     struct simpleComplex<double>  ev;
 
@@ -448,16 +447,17 @@ int process_trajectories(double _from_time, double _to_time,
 
 
 		
-		for( i = 0 ; i < N ; i++)
-		{
-			tlist[i].re = ( ( (i+1) - 1) * h ) ;
-			tlist[i].im = 0.0 ;
-		}
+	for( i = 0 ; i < N ; i++)
+	{
+		tlist[i].re = ( ( (i+1) - 1) * h ) ;
+		tlist[i].im = 0.0 ;
+	}
 
 
 	if(opt.verbose_mode >= 1)
 	{
 		printf ("process_trajectories: Node [%d] Proc.Name [%s]:  tlist done \n", host_rank, processor_name);
+		fflush(stdout);
 		fflush(stdout);
 	}
 
@@ -483,7 +483,7 @@ int process_trajectories(double _from_time, double _to_time,
 #ifdef __USE_DENSE_EXPECT_OPERATORS
 			if(use_expecation_operator == 0)
 			{
-				ev = expect_cnv_denmat< simpleComplex<double>, _WV_LEAD_DIM_SQR,_WV_LEAD_DIM>(_WV_LEAD_DIM, _WV_LEAD_DIM, id_operator, Y);
+				//ev = expect_cnv_denmat< simpleComplex<double>, _WV_LEAD_DIM_SQR,_WV_LEAD_DIM>(_WV_LEAD_DIM, _WV_LEAD_DIM, id_operator, Y);
 			}
 			if(use_expecation_operator == 1)
 			{
@@ -494,15 +494,18 @@ int process_trajectories(double _from_time, double _to_time,
 #ifdef __USE_SPARSE_CSR_EXPECT_OPERATORS
 			if(use_expecation_operator == 2)
 			{
+				
 				ev = expect_cnv_csrdenmat(expect_operator, Y);
 			} 
 #endif
 			pt_trjs[trj][0] = ev;
 
-            //int counterIter = 0;
 
-			printf ("process_trajectories: Node [%d] Proc.Name [%s]:  trj %d: after initial expecation operator.\n", host_rank, processor_name, trj);
-			fflush(stdout);
+			if(opt.verbose_mode >= 1)
+			{
+				printf ("process_trajectories: Node [%d] Proc.Name [%s]:  trj %d: after initial expecation operator.\n", host_rank, processor_name, trj);
+				fflush(stdout);
+			}
 
 			T=tlist[0];
 
@@ -522,17 +525,26 @@ int process_trajectories(double _from_time, double _to_time,
 
                     norm2_prev = norm(Y_prev);
 
-					//printf ("process_trajectories: Node [%d] Proc.Name [%s]:  trj %d: while point 1 -- zvode first call.\n", host_rank, processor_name, trj);
-					//fflush(stdout);
 					
-				    //cout << "norm2_prev=" << norm2_prev << "Y=" << Y << endl;
+					if(opt.verbose_mode >= 1)
+					{
+						printf ("process_trajectories: Node [%d] Proc.Name [%s]:  trj %d: while point 1 -- zvode first call.\n", host_rank, processor_name, trj);
+						fflush(stdout);
+					}
+					
+					
+				    //cout << "norm2_prev=" << norm2_prev << "Yprev=" << Y_prev << endl;
+					//cout << "norm2_prev=" << norm2_prev << endl;
 					
 					itask=2;
 					rwork[1]=T.re;
 					odesolverstate = zvode_method_for_mc<double,_WV_LEAD_DIM,_WV_LEAD_DIM>(h, tout, 1,  T, Y, opt.fnc);
 									
 					//printf ("process_trajectories: node [%d] Proc.Name [%s], odesolverstate %d istate %d itask %d\n", host_rank, processor_name, odesolverstate, istate, itask);
+					
                     norm2_psi = norm( Y );
+					//cout << "norm2=" << norm2_prev << "Y=" << Y << endl;
+					//cout << "norm2_psi=" << norm2_psi << endl;
 
                     if( (norm2_psi <= mu) && (_C_OPS_SIZE > 0) )
                     {
@@ -573,7 +585,6 @@ int process_trajectories(double _from_time, double _to_time,
 								fflush(stdout);
 							}
 
-
                             norm2_guess = norm( Y ) ;
                             if ( abs(mu - norm2_guess) < (ode_norm_tol * mu) )
                             {
@@ -608,8 +619,11 @@ int process_trajectories(double _from_time, double _to_time,
                         {
 							state_of_trjs[trj]=TRJ_BAD;
 							
-							printf ("process_trajectories: Node [%d] Proc.Name [%s]:  %s \n", host_rank, processor_name, "Norm tolerance is reached.");
-							fflush(stdout);
+							if(opt.verbose_mode >=1)
+							{
+								printf ("process_trajectories: Node [%d] Proc.Name [%s]:  %s \n", host_rank, processor_name, "Norm tolerance is reached.");
+								fflush(stdout);
+							}
 
                         }
 
@@ -683,7 +697,7 @@ int process_trajectories(double _from_time, double _to_time,
 #ifdef __USE_DENSE_EXPECT_OPERATORS
 				if(use_expecation_operator == 0)
 				{
-					ev = expect_cnv_denmat< simpleComplex<double>, _WV_LEAD_DIM_SQR, _WV_LEAD_DIM>(_WV_LEAD_DIM, _WV_LEAD_DIM, id_operator, out_psi);		
+					//ev = expect_cnv_denmat< simpleComplex<double>, _WV_LEAD_DIM_SQR, _WV_LEAD_DIM>(_WV_LEAD_DIM, _WV_LEAD_DIM, id_operator, out_psi);
 				}
 				
 				if(use_expecation_operator == 1)
@@ -694,7 +708,7 @@ int process_trajectories(double _from_time, double _to_time,
 #ifdef __USE_SPARSE_CSR_EXPECT_OPERATORS
 				if(use_expecation_operator == 2)
 				{
-					ev = expect_cnv_csrdenmat(expect_operator, Y);
+					ev = expect_cnv_csrdenmat(expect_operator, out_psi);
 				}
 #endif
 				pt_trjs[trj][k].re = ev.re;
@@ -747,7 +761,6 @@ int process_trajectories(double _from_time, double _to_time,
 		printf ("process_trajectories: Node [%d] Proc.Name [%s]:  send TRJ to master node \n", host_rank, processor_name);
 		fflush(stdout);
 	}
-
 
 /*	
 		for( i = 0 ; i < N ; i++)
@@ -817,6 +830,7 @@ int process_codes(int c1, int c2, int host_rank,
 		if(opt.verbose_mode >= 1)
 		{
 			printf("process_codes: node [%d] Proc.Name [%s] -- cmd_RNG_TEST\n", host_rank, processor_name);
+			fflush(stdout);
 		}
 		rng_test_1( host_rank, opt );
 	} //  if(cmd_code[0] == cmd_RNG_TEST)
@@ -827,6 +841,7 @@ int process_codes(int c1, int c2, int host_rank,
 		if(opt.verbose_mode >= 1)
 		{
 			printf("process_codes: node [%d] Proc.Name [%s] -- cmd_TRJ_PROC\n", host_rank, processor_name);
+			fflush(stdout);
 		}
 		process_trajectories<N, Ntrj, _WV_LEAD_DIM, _WV_LEAD_DIM_SQR, _C_OPS_SIZE>( _from_time, _to_time, 
 			host_rank, 
@@ -839,6 +854,7 @@ int process_codes(int c1, int c2, int host_rank,
 		if(opt.verbose_mode >= 1)
 		{
 			printf("process_codes: node [%d] Proc.Name [%s] -- cmd_EXIT\n", host_rank, processor_name);
+			fflush(stdout);
 		}
 		ret_code = cmd_EXIT;
 	} // if(cmd_code[0] == cmd_EXIT)
@@ -848,7 +864,7 @@ int process_codes(int c1, int c2, int host_rank,
 
 
 template<size_t N, size_t Ntrj, size_t _WV_LEAD_DIM, size_t _WV_LEAD_DIM_SQR, size_t _C_OPS_SIZE>
-int mpi_main(int argc, char *argv[], int verbose_mode,
+int mpi_main(int argc, char *argv[],
 						 double _from_time, 
 						 double _to_time,
 						 int use_colappse_operator, int use_expecation_operator,

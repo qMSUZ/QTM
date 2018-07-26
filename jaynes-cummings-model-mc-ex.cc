@@ -78,22 +78,30 @@ int myfex_fnc_f1(	long int *NEQ,
 
 int prepare_matrices()
 {
+	int i;
+	simpleComplex<double> moneimag;
+
+	moneimag.re=0.0;
+	moneimag.im=-1.0;
 	
 	#include "data-h-jcm.txt"
 	#include "data-eops-jcm.txt"	
 	#include "data-alpha-jcm.txt"
+	
+	for(i=0;i<H._values_size;i++)
+	{
+		H.values[i] = moneimag * H.values[i];
+	}
+
 	
 	return 0;
 }
 
 int main(int argc, char *argv[])
 {
-	int i, r = 0;
-	simpleComplex<double> moneimag;
-	
-	moneimag.re=0.0;
-	moneimag.im=-1.0;
+	int r = 0;
 
+	
 	prepare_matrices();
 	
 	opt.type_output = OUTPUT_FILE_PYTHON_STYLE;
@@ -104,13 +112,7 @@ int main(int argc, char *argv[])
 	opt.file_name = strdup("output-data-matplotfig.py");
 	opt.fnc = &myfex_fnc_f1;
 	
-
-	for(i=0;i<H._values_size;i++)
-	{
-		H.values[i] = moneimag * H.values[i];
-	}
-	
-	r = mpi_main<N, Ntrj, WAVEVECTOR_LEAD_DIM, WAVEVECTOR_LEAD_DIM_SQR, 0>(argc, argv, 1, 
+	r = mpi_main<N, Ntrj, WAVEVECTOR_LEAD_DIM, WAVEVECTOR_LEAD_DIM_SQR, 0>(argc, argv,
 	0.0, 35.0, 
 	0, __USE_SPARSE_CSR_EXPECT_OPERATORS, opt);
 
