@@ -44,23 +44,28 @@ OUTPUTNAME_TRIHAM = triham-ex.exe
 OUTPUTNAME_BDPC = bdpc-ex.exe
 OUTPUTNAME_JCM = jcm-ex.exe
 
-QTM_MAIN_SRC = unitary-mc-ex.cc rgen_lfsr113.cc
+UNITARY_MAIN_SRC = unitary-mc-ex.cc rgen_lfsr113.cc
+UNITARY_MAIN_SRC_DIRECT = unitary-mc-ex-direct.cc rgen_lfsr113.cc
 TRIHAM_OBJ_SRC = triham-mc-ex.cc rgen_lfsr113.cc
 BDPC_OBJ_SRC = bdpc-ex.cc rgen_lfsr113.cc
 JCM-MC-EX_SRC = jaynes-cummings-model-mc-ex.cc rgen_lfsr113.cc
 
 ZVODE_SRC = zvode.f zgesl.f zgefa.f zgbsl.f zgbfa.f
 
-QTM_OBJ_MAIN_SRC=$(QTM_MAIN_SRC:.cc=.o)
+#UNITARY_MAIN_SRC=$(QTM_MAIN_SRC:.cc=.o)
 QTM_OBJ_ZVODE_SRC=$(ZVODE_SRC:.f=.o)
 
 LIBRARY=-lmsmpi  -lwsock32
 
 all:
 
-unitary-ex: $(QTM_OBJ_MAIN_SRC) $(QTM_OBJ_ZVODE_SRC)
-		$(CC) $(QTM_OBJ_MAIN_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_U) -lblas -lgfortran $(LIBRARY)
+unitary-ex: $(UNITARY_MAIN_SRC) $(QTM_OBJ_ZVODE_SRC)
+		$(CC) $(UNITARY_MAIN_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_U) -lblas -lgfortran $(LIBRARY)
 
+unitary-ex-direct: $(UNITARY_MAIN_SRC_DIRECT) $(QTM_OBJ_ZVODE_SRC)
+		$(CC) $(UNITARY_MAIN_SRC_DIRECT) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_U) -lblas -lgfortran $(LIBRARY)
+
+		
 triham-ex: $(TRIHAM_OBJ_SRC) $(QTM_OBJ_ZVODE_SRC)
 		$(CC) $(TRIHAM_OBJ_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_TRIHAM) -lblas -lgfortran $(LIBRARY)
 		
