@@ -22,6 +22,7 @@
  ***************************************************************************/
 
 #include <cstdio>
+#include <iostream>
 
 #define __USE_DENSE_EXPECT_OPERATORS
 #define __USE_DENSE_COLLAPSE_OPERATORS
@@ -79,20 +80,29 @@ int myfex_fnc_f1(	long int *NEQ,
 int main(int argc, char *argv[])
 {
 	int r = 0;
-	collapse_operator[0] = make_simpleComplex( 0.0, 0.0 );  collapse_operator[1] = make_simpleComplex( 0.05, 0.0 );
-    collapse_operator[2] = make_simpleComplex( 0.05, 0.0 ); collapse_operator[3] = make_simpleComplex( 0.0, 0.0 );
-
-    expect_operator[0] = make_simpleComplex( 1.0, 0.0); expect_operator[1] = make_simpleComplex( 0.0, 0.0);
-    expect_operator[2] = make_simpleComplex( 0.0, 0.0); expect_operator[3] = make_simpleComplex(-1.0, 0.0);
-
-    alpha[0] = make_simpleComplex( 1.0, 0.0);
-    alpha[1] = make_simpleComplex( 0.0, 0.0);
+	simpleComplex<double> m;
 	
-	// effective Hamiltonian
-	// Heff = (H - ((ih)/2.0) * sum(C^{+}_n C_n))
-	// i -- imaginary unity 
-    H[0] = make_simpleComplex( -0.00125, 0.0);    H[1] = make_simpleComplex( 0.0, -0.62831853);
-    H[2] = make_simpleComplex( 0.0, -0.62831853); H[3] = make_simpleComplex( -0.00125, 0.0);
+	m.re=0;
+	m.im=0.5;
+	
+
+	pauli_x_matrix( collapse_operator );	
+	collapse_operator = collapse_operator * (5.0 / 100.0);
+	
+
+
+	pauli_z_matrix( expect_operator );
+	
+	std_base_state<double, 2>(&alpha[0], 0);
+
+
+	pauli_x_matrix( H );	
+	H = H * ((2.0 * M_PI) / 10.0);
+	H = H - (m * dagnotdag<double, 2, 2>(collapse_operator));
+	
+	m.re=0;
+	m.im=-1.0;
+	H = H * m;
 	
 	c_ops[0].rows=2;
     c_ops[0].cols=2;
@@ -109,6 +119,7 @@ int main(int argc, char *argv[])
 	//opt.file_name = strdup("output-data.txt");
 	opt.file_name = strdup("output-data-matplotfig.py");
 	opt.fnc = &myfex_fnc_f1;
+	
 	
 	
 	r = mpi_main<N, Ntrj, WAVEVECTOR_LEAD_DIM, WAVEVECTOR_LEAD_DIM_SQR, COLLAPSE_OPERATORS>(argc, argv,

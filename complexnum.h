@@ -210,7 +210,6 @@ template <typename T>
 struct simpleComplex<T> operator*(const struct simpleComplex<T> &a, const T &b);
 
 
-
 /*template <typename T>
 const std::vector< struct simpleComplex<T> > operator*(const T &a, const std::vector< struct simpleComplex<T> > &v);
 */
@@ -504,7 +503,7 @@ const uVector< struct simpleComplex<T>, SIZE > operator-(const uVector< struct s
 
 
 template <typename T, size_t SIZE>
-const uVector< struct simpleComplex<T>, SIZE > operator*(const T &a, const uVector< struct simpleComplex<T>, SIZE > &v)
+uVector< struct simpleComplex<T>, SIZE > operator*(const T &a, const uVector< struct simpleComplex<T>, SIZE > &v)
 {
     unsigned int i;
 
@@ -517,6 +516,48 @@ const uVector< struct simpleComplex<T>, SIZE > operator*(const T &a, const uVect
     return vtmp;
 }
 
+template <typename T, size_t SIZE>
+uVector< struct simpleComplex<T>, SIZE > operator*(const simpleComplex<T> &a, const uVector< struct simpleComplex<T>, SIZE > &v)
+{
+    unsigned int i;
+
+    uVector< struct simpleComplex<T>, SIZE > vtmp;
+    for(i=0;i<v.size;i++)
+    {
+        vtmp[i] = a * v[i];
+    }
+
+    return vtmp;
+}
+
+
+template <typename T, size_t SIZE>
+uVector< struct simpleComplex<T>, SIZE > operator*(const uVector< struct simpleComplex<T>, SIZE > &v, const T &a)
+{
+    unsigned int i;
+
+    uVector< struct simpleComplex<T>, SIZE > vtmp;
+    for(i=0;i<v.size;i++)
+    {
+        vtmp[i] = a * v[i];
+    }
+
+    return vtmp;
+}
+
+template <typename T, size_t SIZE>
+uVector< struct simpleComplex<T>, SIZE > operator*(const uVector< struct simpleComplex<T>, SIZE > &v, const struct simpleComplex<T> &a)
+{
+    unsigned int i;
+
+    uVector< struct simpleComplex<T>, SIZE > vtmp;
+    for(i=0;i<v.size;i++)
+    {
+        vtmp[i] = a * v[i];
+    }
+
+    return vtmp;
+}
 
 
 template <typename T, size_t SIZE>
@@ -1263,6 +1304,68 @@ void normalize( uVector< struct simpleComplex<T>, SIZE > &m )
     return ;
 }
 
+template <typename T, size_t SIZE>
+void std_base_state( uVector< struct simpleComplex<T>, SIZE > &m, int state )
+{
+    size_t i;
+
+    for (i = 0 ; i < m.size ; i++)
+    {
+		if( i != state ) {
+			m[i].re = 0.0;
+			m[i].im = 0.0;
+		} else {
+			m[i].re = 1.0;
+			m[i].im = 0.0;
+		}
+    }
+}
+
+template <typename T, size_t SIZE1, size_t SIZE2>
+uVector< struct simpleComplex<T>, SIZE1*SIZE2 > dagnotdag( const uVector< struct simpleComplex<T>, SIZE1*SIZE2 > &m )
+{
+    size_t i;
+
+	uVector< struct simpleComplex<T>, SIZE1*SIZE2 > r;
+	uMatrix< simpleComplex<T>, SIZE1> d,nd;
+	
+	d.cols = SIZE1;
+	d.rows = SIZE2;
+	d.m = m;
+
+	nd.cols = SIZE1;
+	nd.rows = SIZE2;
+	nd.m = m;
+	
+	dagger(d);
+	
+	d  = d * nd;
+	
+	r.size=SIZE1 * SIZE2;
+	r = d.m;
+	
+	return r;
+}
+
+
+template <typename T, size_t SIZE>
+void std_base_state( simpleComplex<T> *tbl, int state )
+{
+    size_t i;
+
+    for (i = 0 ; i < SIZE ; i++)
+    {
+		if( i == state ) {
+			tbl[i].re = 1.0;
+			tbl[i].im = 0.0;
+		} else {
+			tbl[i].re = 0.0;
+			tbl[i].im = 0.0;
+		}
+    }
+}
+
+
 
 //------------------------------------------------------------------------------------------------------------
 // global output operator<< for simpleComplex<T>
@@ -1471,6 +1574,35 @@ void zero_of_matrix( uMatrix< T, SIZE > &m )
 }
 
 template <typename T, size_t SIZE>
+void pauli_x_matrix( uMatrix< T, SIZE > &m )
+{
+    m.m[0] = make_simpleComplex(0.0, 0.0); m.m[1] = make_simpleComplex(1.0, 0.0);
+    m.m[2] = make_simpleComplex(1.0, 0.0); m.m[3] = make_simpleComplex(0.0, 0.0);	
+}
+
+template <typename T, size_t SIZE>
+void pauli_x_matrix( uVector< T, SIZE > &v)
+{
+    v[0] = make_simpleComplex(0.0, 0.0); v[1] = make_simpleComplex(1.0, 0.0);
+    v[2] = make_simpleComplex(1.0, 0.0); v[3] = make_simpleComplex(0.0, 0.0);	
+}
+
+template <typename T, size_t SIZE>
+void pauli_y_matrix( uVector< T, SIZE > &v)
+{
+    v[0] = make_simpleComplex(0.0, 0.0); v[1] = make_simpleComplex(0.0,-1.0);
+    v[2] = make_simpleComplex(0.0, 1.0); v[3] = make_simpleComplex(0.0, 0.0);	
+}
+
+template <typename T, size_t SIZE>
+void pauli_z_matrix( uVector< T, SIZE > &v)
+{
+    v[0] = make_simpleComplex(1.0, 0.0); v[1] = make_simpleComplex( 0.0, 0.0);
+    v[2] = make_simpleComplex(0.0, 0.0); v[3] = make_simpleComplex(-1.0, 0.0);	
+}
+
+
+template <typename T, size_t SIZE>
 void transpose_of_matrix( uMatrix< T, SIZE > &m )
 {
     T a, b;
@@ -1497,8 +1629,7 @@ void transpose_of_matrix( uMatrix< T, SIZE > &m )
 
 template <typename T, size_t SIZE>
 uMatrix< T, SIZE > dagger( uMatrix< T, SIZE > &_m )
-{
-	
+{	
 	uMatrix< T, SIZE > m = _m;
 	
     T a, b;
