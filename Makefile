@@ -33,27 +33,48 @@
 FGET 	= wget
 FC      = gfortran
 MGXX    = g++
-#CC      = mpic++
-CC      = g++
+CC      = mpic++
+#CC      = g++
 RUN     = mpirun
 CFLAGS  = -I. -fpermissive
 FCFLAGS = -I. 
 
-OUTPUTNAME = qtm.exe
+OUTPUTNAME_U = unitary-ex
+OUTPUTNAME_TRIHAM = triham-ex
+OUTPUTNAME_BDPC = bdpc-ex
+OUTPUTNAME_JCM = jcm-ex
 
-QTM_MAIN_SRC = unitary-mc-ex.cc rgen_lfsr113.cc
+UNITARY_MAIN_SRC = unitary-mc-ex.cc rgen_lfsr113.cc
+UNITARY_MAIN_SRC_DIRECT = unitary-mc-ex-direct.cc rgen_lfsr113.cc
+TRIHAM_OBJ_SRC = triham-mc-ex.cc rgen_lfsr113.cc
+BDPC_OBJ_SRC = bdpc-ex.cc rgen_lfsr113.cc
+JCM-MC-EX_SRC = jaynes-cummings-model-mc-ex.cc rgen_lfsr113.cc
+
 ZVODE_SRC = zvode.f zgesl.f zgefa.f zgbsl.f zgbfa.f
 
-QTM_OBJ_MAIN_SRC=$(QTM_MAIN_SRC:.cc=.o)
+#UNITARY_MAIN_SRC=$(QTM_MAIN_SRC:.cc=.o)
 QTM_OBJ_ZVODE_SRC=$(ZVODE_SRC:.f=.o)
 
-LIBRARY=-lmsmpi  -lwsock32
+LIBRARY=
 
-all: compile_task
+all:
 
-compile_task: $(QTM_OBJ_MAIN_SRC) $(QTM_OBJ_ZVODE_SRC)
-		$(CC) $(QTM_OBJ_MAIN_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME) -lblas -lgfortran $(LIBRARY)
+unitary-ex: $(UNITARY_MAIN_SRC) $(QTM_OBJ_ZVODE_SRC)
+		$(CC) $(UNITARY_MAIN_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_U) -lblas -lgfortran $(LIBRARY)
 
+unitary-ex-direct: $(UNITARY_MAIN_SRC_DIRECT) $(QTM_OBJ_ZVODE_SRC)
+		$(CC) $(UNITARY_MAIN_SRC_DIRECT) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_U) -lblas -lgfortran $(LIBRARY)
+
+		
+triham-ex: $(TRIHAM_OBJ_SRC) $(QTM_OBJ_ZVODE_SRC)
+		$(CC) $(TRIHAM_OBJ_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_TRIHAM) -lblas -lgfortran $(LIBRARY)
+		
+bdpc-ex: $(BDPC_OBJ_SRC) $(QTM_OBJ_ZVODE_SRC)
+		$(CC) $(BDPC_OBJ_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_BDPC) -lblas -lgfortran $(LIBRARY)
+
+jcm-ex: $(JCM-MC-EX_SRC) $(QTM_OBJ_ZVODE_SRC)
+	$(CC) $(JCM-MC-EX_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_JCM) -lblas -lgfortran $(LIBRARY)
+	
 testlfsr113:
 	$(MGXX) $(CFLAGS) -c rgen_lfsr113.cc
 	$(MGXX) $(CFLAGS) -o testrgen_lfsr113 testrgen_lfsr113.cc rgen_lfsr113.o
@@ -76,7 +97,10 @@ run:
 
 run4:
 	mpirun -n 4 qtm.exe
- 
-clean:
-	rm -f *.o *.exe
+
+partclean:
+	rm -f unitary-mc-ex.o triham-mc-ex.o bdpc-ex.o jaynes-cummings-model-mc-ex.o $(OUTPUTNAME_U) $(OUTPUTNAME_TRIHAM) $(OUTPUTNAME_BDPC) $(OUTPUTNAME_JCM)
+	
+clean: 
+	rm -f *.o $(OUTPUTNAME_U) $(OUTPUTNAME_TRIHAM) $(OUTPUTNAME_BDPC) $(OUTPUTNAME_JCM)
 
