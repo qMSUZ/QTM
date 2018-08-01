@@ -90,11 +90,9 @@ int main(int argc, char *argv[])
 	collapse_operator = collapse_operator * (5.0 / 100.0);
 	
 
-
 	pauli_z_matrix( expect_operator );
 	
 	std_base_state<double, 2>(&alpha[0], 0);
-
 
 	pauli_x_matrix( H );	
 	H = H * ((2.0 * M_PI) / 10.0);
@@ -105,8 +103,8 @@ int main(int argc, char *argv[])
 	H = H * m;
 	
 	c_ops[0].rows=2;
-    c_ops[0].cols=2;
-    c_ops[0].m = collapse_operator;
+	c_ops[0].cols=2;
+	c_ops[0].m = collapse_operator;
 	
 	opt.type_output = OUTPUT_FILE_PYTHON_STYLE;
 	//opt.type_output = OUTPUT_FILE;
@@ -123,7 +121,7 @@ int main(int argc, char *argv[])
 	
 	
 	r = mpi_main<N, Ntrj, WAVEVECTOR_LEAD_DIM, WAVEVECTOR_LEAD_DIM_SQR, COLLAPSE_OPERATORS>(argc, argv,
-		0, 10, 
+		0, 10,
 		1, 1, opt);
 	
 	return r;

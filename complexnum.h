@@ -642,6 +642,23 @@ struct uMatrix<T, SIZE> operator*(const T &s, const struct uMatrix<T, SIZE> &m)
     return vtmp;
 }
 
+template <typename T, size_t SIZE>
+struct uMatrix<T, SIZE> operator*(const struct uMatrix<T, SIZE> &m, const T &s)
+{
+    unsigned int i, j;
+    struct uMatrix<T, SIZE> vtmp;
+
+    for( i=0 ; i<m.rows ; i++)
+    {
+        for( j=0; j < m.cols ; j++)
+        {
+            vtmp(i,j) = s * m(i,j);
+        } // for( k=0; k < sy ; k++)
+    } // for( i=0 ; i<m.cols ; i++)
+
+    return vtmp;
+}
+
 
 template <typename T, size_t SIZE>
 struct uMatrix<T, SIZE> operator*(const simpleComplex<T> &s, const struct uMatrix<T, SIZE> &m)
@@ -660,6 +677,22 @@ struct uMatrix<T, SIZE> operator*(const simpleComplex<T> &s, const struct uMatri
     return vtmp;
 }
 
+template <typename T, size_t SIZE>
+struct uMatrix<T, SIZE> operator*(const struct uMatrix<T, SIZE> &m, const simpleComplex<T> &s)
+{
+    unsigned int i, j;
+    struct uMatrix<T, SIZE> vtmp;
+
+    for( i=0 ; i<m.rows ; i++)
+    {
+        for( j=0; j < m.cols ; j++)
+        {
+            vtmp(i,j) = s * m(i,j);
+        } // for( k=0; k < sy ; k++)
+    } // for( i=0 ; i<m.cols ; i++)
+
+    return vtmp;
+}
 
 template <typename T, size_t SIZE>
 struct uMatrix<T, SIZE> operator*(const double &s, const struct uMatrix<T, SIZE> &m)
@@ -677,6 +710,24 @@ struct uMatrix<T, SIZE> operator*(const double &s, const struct uMatrix<T, SIZE>
 
     return vtmp;
 }
+
+template <typename T, size_t SIZE>
+struct uMatrix<T, SIZE> operator*(const struct uMatrix<T, SIZE> &m, const double &s)
+{
+    unsigned int i, j;
+    struct uMatrix<T, SIZE> vtmp;
+
+    for( i=0 ; i<m.rows ; i++)
+    {
+        for( j=0; j < m.cols ; j++)
+        {
+            vtmp(i,j) = s * m(i,j);
+        } // for( k=0; k < sy ; k++)
+    } // for( i=0 ; i<m.cols ; i++)
+
+    return vtmp;
+}
+
 
 
 // matrix and matrix mul
@@ -1563,7 +1614,7 @@ void eye_of_matrix(uMatrix<T, SIZE> &m)
 }
 
 template <typename T, size_t SIZE>
-void zero_of_matrix( uMatrix< T, SIZE > &m )
+void zero_matrix( uMatrix< T, SIZE > &m )
 {
     size_t i;
 
@@ -1628,7 +1679,7 @@ void transpose_of_matrix( uMatrix< T, SIZE > &m )
 }
 
 template <typename T, size_t SIZE>
-uMatrix< T, SIZE > dagger( uMatrix< T, SIZE > &_m )
+uMatrix< T, SIZE > dagger( const uMatrix< T, SIZE > &_m )
 {	
 	uMatrix< T, SIZE > m = _m;
 	
@@ -1754,11 +1805,48 @@ void zerovector( uVector< struct simpleComplex<T>, SIZE > &v)
 }
 
 
-template <typename T, size_t SIZE>
-uMatrix<T, SIZE*SIZE>  tensor(uMatrix<T, SIZE> &m1, uMatrix<T, SIZE> &m2)
+template <typename T, size_t SIZE1, size_t SIZE2>
+uMatrix<T, SIZE1*SIZE2>  tensor(uMatrix<T, SIZE1> &m1, uMatrix<T, SIZE2> &m2)
 {
-	uMatrix<T, SIZE*SIZE>  tmp;
-	
+	int x,y,i,j,ii,jj;
+	uMatrix<T, SIZE1*SIZE2>  tmp;
+    simpleComplex<T> num;
+
+	for(i=0;i<tmp.rows;i++)
+    {
+		for(j=0;j<tmp.cols;j++)
+		{
+			tmp(i,j).re=0;
+			tmp(i,j).im=0;
+		}
+	}
+
+    ii=0;
+    jj=0;
+     for(x=0;x<m1.rows;x++)
+     {
+         for(y=0;y<m1.cols;y++)
+         {
+             ii=(x*m2.rows);
+             jj=(y*m2.cols);
+             for(i=0;i<m2.rows;i++)
+             {
+                 for(j=0;j<m2.cols;j++)
+                 {
+                     num.re=0;
+                     num.im=0;
+
+					 num = m1(x,y) * m2(i,j);
+					 
+					 tmp(ii,jj) = num;
+					 
+                     jj++;
+                 }
+                ii++;
+                jj-=m2.cols;
+             }
+         }
+     }
 	return tmp;
 }
 
