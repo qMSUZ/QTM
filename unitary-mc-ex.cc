@@ -54,25 +54,25 @@ int myfex_fnc_f1(	long int *NEQ,
 			dblcmplx *RPAR,
 			long int *IPAR)
 {
-    simpleComplex<double> o0, o1, out0, out1;
+	simpleComplex<double> o0, o1, out0, out1;
 
-      o0.re=0.0;   o0.im=0.0; o1.re=0.0;   o1.im=0.0;
-    out0.re=0.0; out0.im=0; out1.re=0.0; out1.im=0.0;
+	o0.re=0.0;		o0.im=0.0;	  o1.re=0.0;	  o1.im=0.0;
+	out0.re=0.0;	out0.im=0;	out1.re=0.0;	out1.im=0.0;
 
-    o0 = Y[0] * H[0];
-    o1 = Y[1] * H[1];
+	o0 = Y[0] * H[0];
+	o1 = Y[1] * H[1];
 
-    out0 = o0 + o1;
+	out0 = o0 + o1;
 
-    o0.re=0.0;   o0.im=0.0; o1.re=0.0;   o1.im=0.0;
+	o0.re=0.0;   o0.im=0.0; o1.re=0.0;   o1.im=0.0;
 
-    o0 = Y[0] * H[2];
-    o1 = Y[1] * H[3];
+	o0 = Y[0] * H[2];
+	o1 = Y[1] * H[3];
 
-    out1 = o0 + o1;
+	out1 = o0 + o1;
 
-    YDOT[0] = out0;
-    YDOT[1] = out1;
+	YDOT[0] = out0;
+	YDOT[1] = out1;
 
 	return 0;
 }

@@ -46,32 +46,32 @@ simpleComplex<double> alpha[WAVEVECTOR_LEAD_DIM];
 
 extra_options opt;
 
-int myfex_fnc_f1(	long int *NEQ,
+int myfex_fnc_f1( long int *NEQ,
 			double *T,
 			dblcmplx *Y,
 			dblcmplx *YDOT,
 			dblcmplx *RPAR,
 			long int *IPAR)
 {
-    simpleComplex<double> o0, o1, out0, out1;
+	simpleComplex<double> o0, o1, out0, out1;
 
-      o0.re=0.0;   o0.im=0.0; o1.re=0.0;   o1.im=0.0;
-    out0.re=0.0; out0.im=0; out1.re=0.0; out1.im=0.0;
+	  o0.re=0.0;	  o0.im=0.0; o1.re=0.0;   o1.im=0.0;
+	out0.re=0.0;	out0.im=0; out1.re=0.0; out1.im=0.0;
 
-    o0 = Y[0] * H[0];
-    o1 = Y[1] * H[1];
+	o0 = Y[0] * H[0];
+	o1 = Y[1] * H[1];
 
-    out0 = o0 + o1;
+	out0 = o0 + o1;
 
-    o0.re=0.0;   o0.im=0.0; o1.re=0.0;   o1.im=0.0;
+	o0.re=0.0;   o0.im=0.0; o1.re=0.0;   o1.im=0.0;
 
-    o0 = Y[0] * H[2];
-    o1 = Y[1] * H[3];
+	o0 = Y[0] * H[2];
+	o1 = Y[1] * H[3];
 
-    out1 = o0 + o1;
+	out1 = o0 + o1;
 
-    YDOT[0] = out0;
-    YDOT[1] = out1;
+	YDOT[0] = out0;
+	YDOT[1] = out1;
 
 	return 0;
 }
@@ -80,24 +80,24 @@ int main(int argc, char *argv[])
 {
 	int r = 0;
 	collapse_operator[0] = make_simpleComplex( 0.0, 0.0 );  collapse_operator[1] = make_simpleComplex( 0.05, 0.0 );
-    collapse_operator[2] = make_simpleComplex( 0.05, 0.0 ); collapse_operator[3] = make_simpleComplex( 0.0, 0.0 );
+	collapse_operator[2] = make_simpleComplex( 0.05, 0.0 ); collapse_operator[3] = make_simpleComplex( 0.0, 0.0 );
 
-    expect_operator[0] = make_simpleComplex( 1.0, 0.0); expect_operator[1] = make_simpleComplex( 0.0, 0.0);
-    expect_operator[2] = make_simpleComplex( 0.0, 0.0); expect_operator[3] = make_simpleComplex(-1.0, 0.0);
+	expect_operator[0] = make_simpleComplex( 1.0, 0.0); expect_operator[1] = make_simpleComplex( 0.0, 0.0);
+	expect_operator[2] = make_simpleComplex( 0.0, 0.0); expect_operator[3] = make_simpleComplex(-1.0, 0.0);
 
-    alpha[0] = make_simpleComplex( 1.0, 0.0);
-    alpha[1] = make_simpleComplex( 0.0, 0.0);
-	
+	alpha[0] = make_simpleComplex( 1.0, 0.0);
+	alpha[1] = make_simpleComplex( 0.0, 0.0);
+
 	// effective Hamiltonian
 	// Heff = (H - ((ih)/2.0) * sum(C^{+}_n C_n))
 	// i -- imaginary unity 
-    H[0] = make_simpleComplex( -0.00125, 0.0);    H[1] = make_simpleComplex( 0.0, -0.62831853);
-    H[2] = make_simpleComplex( 0.0, -0.62831853); H[3] = make_simpleComplex( -0.00125, 0.0);
-	
+	H[0] = make_simpleComplex( -0.00125, 0.0);    H[1] = make_simpleComplex( 0.0, -0.62831853);
+	H[2] = make_simpleComplex( 0.0, -0.62831853); H[3] = make_simpleComplex( -0.00125, 0.0);
+
 	c_ops[0].rows=2;
-    c_ops[0].cols=2;
-    c_ops[0].m = collapse_operator;
-	
+	c_ops[0].cols=2;
+	c_ops[0].m = collapse_operator;
+
 	opt.type_output = OUTPUT_FILE_PYTHON_STYLE;
 	//opt.type_output = OUTPUT_FILE;
 	opt.state_of_trj_output = OUTPUT_STATE_OF_TRJ_FILE;
@@ -109,11 +109,11 @@ int main(int argc, char *argv[])
 	//opt.file_name = strdup("output-data.txt");
 	opt.file_name = strdup("output-data-matplotfig.py");
 	opt.fnc = &myfex_fnc_f1;
-	
-	
+
+
 	r = mpi_main<N, Ntrj, WAVEVECTOR_LEAD_DIM, WAVEVECTOR_LEAD_DIM_SQR, COLLAPSE_OPERATORS>(argc, argv,
 		0, 10, 
 		1, 1, opt);
-	
+
 	return r;
 }

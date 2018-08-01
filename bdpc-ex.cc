@@ -47,62 +47,60 @@ simpleComplex<double> alpha[WAVEVECTOR_LEAD_DIM];
 
 extra_options opt;
 
-int myfex_fnc_f1(	long int *NEQ,
+int myfex_fnc_f1( long int *NEQ,
 			double *T,
 			dblcmplx *Y,
 			dblcmplx *YDOT,
 			dblcmplx *RPAR,
 			long int *IPAR)
 {
-    // YDOT = H * Y;
+	// YDOT = H * Y;
 
-    size_t i, k;
+	size_t i, k;
 
 	for( i=0; i<WAVEVECTOR_LEAD_DIM ; i++)
-    {
-        YDOT[i].re = 0.0;
-        YDOT[i].im = 0.0;
+	{
+		YDOT[i].re = 0.0;
+		YDOT[i].im = 0.0;
 		for( k=0; k <  WAVEVECTOR_LEAD_DIM; k++)
-        {
-            YDOT[i] = YDOT[i] + H[ (i * WAVEVECTOR_LEAD_DIM) + k] * Y[k];
-        } // for( k=0; k <  WAVEVECTOR_LEAD_DIM; k++)
-    } // for( i=0; i<WAVEVECTOR_LEAD_DIM ; i++)
+		{
+			YDOT[i] = YDOT[i] + H[ (i * WAVEVECTOR_LEAD_DIM) + k] * Y[k];
+		} // for( k=0; k <  WAVEVECTOR_LEAD_DIM; k++)
+	} // for( i=0; i<WAVEVECTOR_LEAD_DIM ; i++)
 
 	return 0;
 }
 
-
-
 int main(int argc, char *argv[])
 {
 	int i, r = 0;
-	
+
 	simpleComplex<double> m;
 
 	const int Ndim = 5;
 	double kappa = 1.0/0.129;
 	double nth = 0.063;
-	
+
 	uMatrix< simpleComplex<double>, WAVEVECTOR_LEAD_DIM >	amat, hmat, c0, c1, emat;
-	
+
 	zero_matrix(amat);
 	zero_matrix(hmat);
 	zero_matrix(c0);
 	zero_matrix(c1);
 	zero_matrix(emat);
-	
+
 	destroy_operator( amat );
 	hmat = dagger(amat) * amat;
-	
+
 	c0 = sqrt(kappa * (1 + nth)) * amat;
 	c1 = sqrt(kappa * nth) * dagger(amat);
 
 	emat = dagger(amat) * amat;
-	
+
 	std_base_state<double, WAVEVECTOR_LEAD_DIM>(&alpha[0], 1);
 
 	m.re=0;
-	m.im=0.5;	
+	m.im=0.5;
 
 	hmat = hmat - (m * (dagger(c0)*c0 + dagger(c1)*c1))  ;
 	
@@ -110,95 +108,28 @@ int main(int argc, char *argv[])
 	m.im=-1.0;
 	hmat = hmat * m;
 
-
-	cout << "c0 = " << endl;
-	cout << c0 << endl;
-
-	cout << "c1 = " << endl;
-	cout << c1 << endl;
-
-	cout << "e = " << endl;
-	cout << emat << endl;
-
-	cout << "alpha=[" << alpha[0] << endl;
-	cout << alpha[1] << endl;
-	cout << alpha[2] << endl;
-	cout << alpha[3] << endl;
-	cout << alpha[4] << "]" << endl;
-
-	cout << "h = " << endl;
-	cout << hmat << endl;
-	
-	
 	zerovector(co0);
 	zerovector(co1);
 
 	co0 = c0.m;
 	co1 = c1.m;
 	
-	/*
-	co0[ 1] = make_simpleComplex( 2.87059403, 0.0);
-	co0[ 7] = make_simpleComplex( 4.05963301, 0.0);
-	co0[13] = make_simpleComplex( 4.97201471, 0.0);
-	co0[19] = make_simpleComplex( 5.74118806, 0.0);	
-
-	co1[ 5] = make_simpleComplex( 0.69883624, 0.0);
-	co1[11] = make_simpleComplex( 0.98830369, 0.0);
-	co1[17] = make_simpleComplex( 1.21041988, 0.0);
-	co1[23] = make_simpleComplex( 1.39767248, 0.0);	
-	*/
-	
 	zerovector( expect_operator );
 
 	expect_operator = emat.m;
 	
-	/*
-    expect_operator[ 0] = make_simpleComplex( 0.0, 0.0);    
-	expect_operator[ 6] = make_simpleComplex( 1.0, 0.0);
-	expect_operator[12] = make_simpleComplex( 2.0, 0.0);
-	expect_operator[18] = make_simpleComplex( 3.0, 0.0);
-	expect_operator[24] = make_simpleComplex( 4.0, 0.0);
-	*/
-	
-	/*
-    alpha[0] = make_simpleComplex( 0.0, 0.0);
-    alpha[1] = make_simpleComplex( 1.0, 0.0);
-    alpha[2] = make_simpleComplex( 0.0, 0.0);
-    alpha[3] = make_simpleComplex( 0.0, 0.0);
-    alpha[4] = make_simpleComplex( 0.0, 0.0);
-	*/
-	// effective Hamiltonian
-	// Heff = (H - ((ih)/2.0) * sum(C^{+}_n C_n))
-	// i -- imaginary unity
-	
 	zerovector( H );
 	
 	H=hmat.m;
-	
-	
-	/*
-    H[ 0] = make_simpleComplex( 0.0, -0.24418604651162792);    
-	H[ 6] = make_simpleComplex( 1.0, -4.6085271317829459);
-	H[12] = make_simpleComplex( 2.0, -8.9728682170542644);
-	H[18] = make_simpleComplex( 3.0, -13.337209302325581 );
-	H[24] = make_simpleComplex( 4.0, -16.480620155038761);
-	
-	m.re=0;
-	m.im=-1.0;
-	for(i=0;i<WAVEVECTOR_LEAD_DIM_SQR;i++)
-	{
-		H[i] = m * H[i];
-	}
-	*/
-	
+
 	c_ops[0].rows=5;
-    c_ops[0].cols=5;
-    c_ops[0].m = co0;
+	c_ops[0].cols=5;
+	c_ops[0].m = co0;
 
 	c_ops[1].rows=5;
-    c_ops[1].cols=5;
-    c_ops[1].m = co1;
-	
+	c_ops[1].cols=5;
+	c_ops[1].m = co1;
+
 	//opt.type_output = OUTPUT_FILE;
 	opt.type_output = OUTPUT_FILE_PYTHON_STYLE;
 	opt.state_of_trj_output = 0;
@@ -211,7 +142,7 @@ int main(int argc, char *argv[])
 	//opt.file_name = strdup("output-data.txt");
 	opt.file_name = strdup("output-data-matplotfig.py");
 	opt.fnc = &myfex_fnc_f1;
-	
+
 
 	r = mpi_main<N, Ntrj, 
 		WAVEVECTOR_LEAD_DIM, WAVEVECTOR_LEAD_DIM_SQR, COLLAPSE_OPERATORS>(argc, argv,
