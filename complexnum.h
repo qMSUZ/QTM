@@ -1806,18 +1806,18 @@ void zerovector( uVector< struct simpleComplex<T>, SIZE > &v)
 
 
 template <typename T, size_t SIZE1, size_t SIZE2>
-uMatrix<T, SIZE1*SIZE2>  tensor(uMatrix<T, SIZE1> &m1, uMatrix<T, SIZE2> &m2)
+uMatrix<simpleComplex<T>, SIZE1*SIZE2>  tensor(uMatrix<simpleComplex<T>, SIZE1> &m1, uMatrix<simpleComplex<T>, SIZE2> &m2)
 {
 	int x,y,i,j,ii,jj;
-	uMatrix<T, SIZE1*SIZE2>  tmp;
+	uMatrix< simpleComplex<T>, SIZE1*SIZE2>  tmp;
     simpleComplex<T> num;
 
 	for(i=0;i<tmp.rows;i++)
     {
 		for(j=0;j<tmp.cols;j++)
 		{
-			tmp(i,j).re=0;
-			tmp(i,j).im=0;
+			tmp(i,j).re=0.0;
+			tmp(i,j).im=0.0;
 		}
 	}
 
@@ -1833,8 +1833,8 @@ uMatrix<T, SIZE1*SIZE2>  tensor(uMatrix<T, SIZE1> &m1, uMatrix<T, SIZE2> &m2)
              {
                  for(j=0;j<m2.cols;j++)
                  {
-                     num.re=0;
-                     num.im=0;
+                     num.re=0.0;
+                     num.im=0.0;
 
 					 num = m1(x,y) * m2(i,j);
 					 
