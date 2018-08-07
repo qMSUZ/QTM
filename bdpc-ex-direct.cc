@@ -82,8 +82,8 @@ int main(int argc, char *argv[])
 	moneimag.re=0.0;
 	moneimag.im=-1.0;
 	
-	zerovector(co0);
-	zerovector(co1);
+	zero_vector(co0);
+	zero_vector(co1);
 
 	co0[ 1] = make_simpleComplex( 2.87059403, 0.0);
 	co0[ 7] = make_simpleComplex( 4.05963301, 0.0);
@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
 	co1[23] = make_simpleComplex( 1.39767248, 0.0);	
 
 	
-	zerovector( expect_operator );
+	zero_vector( expect_operator );
 
     expect_operator[ 0] = make_simpleComplex( 0.0, 0.0);    
 	expect_operator[ 6] = make_simpleComplex( 1.0, 0.0);
@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
 	// Heff = (H - ((ih)/2.0) * sum(C^{+}_n C_n))
 	// i -- imaginary unity
 	
-	zerovector( H );
+	zero_vector( H );
     H[ 0] = make_simpleComplex( 0.0, -0.24418604651162792);    
 	H[ 6] = make_simpleComplex( 1.0, -4.6085271317829459);
 	H[12] = make_simpleComplex( 2.0, -8.9728682170542644);

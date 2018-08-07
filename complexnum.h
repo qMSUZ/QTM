@@ -83,8 +83,6 @@ struct uMatrix {
 
     uVector< T, SIZE * SIZE > m;
 
-    //constructors
-
 
     // get size
     inline unsigned int size() const
@@ -186,6 +184,9 @@ uVector< T, v_size> mulCSRMatByuVec(uCSRMatrix<T, _S_ValueSize, _S_RowPtr, _S_Co
 
     return y;
 }
+
+template <typename T, size_t SIZE>
+void exp_of_matrix(uMatrix< simpleComplex<T>, SIZE> &x, const long int p, uMatrix< simpleComplex<T>, SIZE> &ret);
 
 #if 0
 template <typename T>
@@ -454,6 +455,19 @@ float simpleComplexMod (const struct simpleComplex<float> &a)
 
 	return f;
 }
+
+template <typename T>
+simpleComplex<T> simpleComplexConj (const struct simpleComplex<T> &a)
+{
+	simpleComplex<T> tmp;
+	
+	tmp = a;
+	
+	tmp.im = -tmp.im;
+	
+	return tmp;
+}
+
 
 template <typename T>
 struct simpleComplex<T> make_simpleComplex (T r, T i)
@@ -1447,7 +1461,7 @@ uVector< struct simpleComplex<T>, SIZE1*SIZE2 > dagnotdag( const uVector< struct
 	nd.rows = SIZE2;
 	nd.m = m;
 	
-	dagger(d);
+	d = dagger(nd);
 	
 	d  = d * nd;
 	
@@ -1476,12 +1490,55 @@ void std_base_state( simpleComplex<T> *tbl, int state )
 }
 
 template <typename T, size_t SIZE>
-void coherent_state( simpleComplex<T> *tbl, T alpha )
+uVector< struct simpleComplex<T>, SIZE > coherent( struct simpleComplex<T> alpha )
 {
+	uVector< struct simpleComplex<T>, SIZE > x;
+	uMatrix< struct simpleComplex<T>, SIZE > a, adag, tmpmat, D;
+
+	
 	//x = basis(N, 0)
 	//a = destroy(N)
 	//D = (alpha * a.dag() - conj(alpha) * a).expm()
 	//return D * x
+
+
+    size_t i;
+
+    for(i=0; i<x.size; i++)
+    {
+        x[i] = make_simpleComplex(0.0, 0.0);
+    }
+	
+	std_base_state(x, 0);
+	
+	destroy_operator( a );
+	
+	cout << endl;
+	cout << "a=" << endl;
+	cout << a;
+	cout << endl;
+	
+	//destroy_operator( adag );
+	adag = dagger( a );
+
+	cout << "adag._size = " << adag._size << endl;
+	cout << "adag.rows = " << adag.rows << endl;	
+	cout << "adag.cols = " << adag.cols << endl;
+	
+	
+	cout << endl;
+	cout << "adag=" << endl;
+	cout << adag;
+	cout << endl;
+
+	
+	tmpmat = (alpha * adag) - (simpleComplexConj(alpha) * a);
+	
+	
+	
+	exp_of_matrix(tmpmat, 10, D);
+	
+	return D * x;
 }
 
 
@@ -1757,28 +1814,27 @@ void transpose_of_matrix( uMatrix< T, SIZE > &m )
 template <typename T, size_t SIZE>
 uMatrix< T, SIZE > dagger( const uMatrix< T, SIZE > &_m )
 {	
-	uMatrix< T, SIZE > m = _m;
+	uMatrix< T, SIZE > m;
+	
+	m = _m;
 	
     T a, b;
     size_t i,j;
 
-    if(m.rows == m.cols)
+    for(i=0 ; i<m.rows ; i++)
     {
-        for(i=0 ; i<m.rows ; i++)
-        {
-            for(j=i ; j<m.cols ; j++)
-            {
-                a = m(i,j);
-                a.im = -a.im;
+		for(j=i ; j<m.cols ; j++)
+		{
+			a = m(i,j);
+			a.im = -a.im;
 				
-                b = m(j,i);
-                b.im = -b.im;
+			b = m(j,i);
+			b.im = -b.im;
 				
-                m(i, j) = b;
-                m(j, i) = a;
+            m(i, j) = b;
+            m(j, i) = a;
             }
-        }
-    }
+	}
 	
 	return m;
 }
@@ -1876,7 +1932,7 @@ T norminf( const uVector< T, SIZE > &v)
 }
 
 template <typename T, size_t SIZE>
-void zerovector( uVector< struct simpleComplex<T>, SIZE > &v)
+void zero_vector( uVector< struct simpleComplex<T>, SIZE > &v)
 {
     size_t i;
 

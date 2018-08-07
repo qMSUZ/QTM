@@ -108,17 +108,17 @@ int main(int argc, char *argv[])
 	m.im=-1.0;
 	hmat = hmat * m;
 
-	zerovector(co0);
-	zerovector(co1);
+	zero_vector(co0);
+	zero_vector(co1);
 
 	co0 = c0.m;
 	co1 = c1.m;
 	
-	zerovector( expect_operator );
+	zero_vector( expect_operator );
 
 	expect_operator = emat.m;
 	
-	zerovector( H );
+	zero_vector( H );
 	
 	H=hmat.m;
 

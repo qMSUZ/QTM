@@ -29,8 +29,6 @@
 
 #include <mpi.h>
 
-#include "complexnum.h"
-
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -355,11 +353,11 @@ int process_trajectories(double _from_time, double _to_time,
 	
 	//uVector< simpleComplex<double>, _WV_LEAD_DIM_SQR> id_operator;
 
-	zerovector(Y);
-	zerovector(Y_prev);
-	zerovector(Y_tmp);
-	zerovector(out_psi);
-	//zerovector(id_operator);
+	zero_vector(Y);
+	zero_vector(Y_prev);
+	zero_vector(Y_tmp);
+	zero_vector(out_psi);
+	//zero_vector(id_operator);
 	
 	/*
 	k=0;
