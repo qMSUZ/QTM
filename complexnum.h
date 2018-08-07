@@ -1495,13 +1495,6 @@ uVector< struct simpleComplex<T>, SIZE > coherent( struct simpleComplex<T> alpha
 	uVector< struct simpleComplex<T>, SIZE > x;
 	uMatrix< struct simpleComplex<T>, SIZE > a, adag, tmpmat, D;
 
-	
-	//x = basis(N, 0)
-	//a = destroy(N)
-	//D = (alpha * a.dag() - conj(alpha) * a).expm()
-	//return D * x
-
-
     size_t i;
 
     for(i=0; i<x.size; i++)
@@ -1513,28 +1506,10 @@ uVector< struct simpleComplex<T>, SIZE > coherent( struct simpleComplex<T> alpha
 	
 	destroy_operator( a );
 	
-	cout << endl;
-	cout << "a=" << endl;
-	cout << a;
-	cout << endl;
-	
-	//destroy_operator( adag );
+
 	adag = dagger( a );
-
-	cout << "adag._size = " << adag._size << endl;
-	cout << "adag.rows = " << adag.rows << endl;	
-	cout << "adag.cols = " << adag.cols << endl;
-	
-	
-	cout << endl;
-	cout << "adag=" << endl;
-	cout << adag;
-	cout << endl;
-
 	
 	tmpmat = (alpha * adag) - (simpleComplexConj(alpha) * a);
-	
-	
 	
 	exp_of_matrix(tmpmat, 10, D);
 	
