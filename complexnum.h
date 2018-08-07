@@ -1,6 +1,31 @@
 #ifndef __complexnum_h__
 #define __complexnum_h__
 
+/***************************************************************************
+ *   Copyright (C) 2017 -- 2018 by Marek Sawerwain                         *
+ *                                         <M.Sawerwain@gmail.com>         *
+ *							   and Joanna Wiśniewska                       *
+ *                                         <jwisniewska@wat.edu.pl>        *
+ *                                                                         * 
+ *   Part of the Quantum Trajectory Method:                                *
+ *   https://github.com/qMSUZ/QTM                                          *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 3 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, write to the                         *
+ *   Free Software Foundation, Inc.,                                       *
+ *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+ ***************************************************************************/
+
 #include <iostream>
 #include <iomanip>
 
@@ -15,6 +40,8 @@ struct simpleComplex {
 	T re;
 	T im;
 };
+
+typedef simpleComplex<double> dblcmplx;
 
 template <typename T>
 struct simpleComplex<T> make_simpleComplex (T r, T i);
@@ -225,6 +252,7 @@ struct simpleComplex<T> operator/(const struct simpleComplex<T> &a, const T &_b)
 
 
 
+double simpleComplexAbs (const struct simpleComplex<double> &a);
 double simpleComplexMod (const struct simpleComplex<double> &a);
 float simpleComplexMod (const struct simpleComplex<float> &a);
 
@@ -332,6 +360,27 @@ struct simpleComplex<T> operator*(const struct simpleComplex<T> &a, const T &b)
 	return t;
 }
 
+template <typename T>
+struct simpleComplex<T> operator*(const long int &a, const struct simpleComplex<T> &b)
+{
+	struct simpleComplex<T> t;
+
+	t.re = ((T)a * b.re);
+	t.im = ((T)a * b.im);
+
+	return t;
+}
+
+template <typename T>
+struct simpleComplex<T> operator*(const struct simpleComplex<T> &a, const long int &b)
+{
+	struct simpleComplex<T> t;
+
+	t.re = (a.re * (T)b);
+	t.im = (a.im * (T)b);
+
+	return t;
+}
 
 template <typename T>
 struct simpleComplex<T> operator/(const struct simpleComplex<T> &a, const struct simpleComplex<T> &b)
@@ -377,6 +426,16 @@ struct simpleComplex<T> operator/(const struct simpleComplex<T> &a, const T &_b)
 
 	return t;
 }
+
+double  simpleComplexAbs (const struct simpleComplex<double> &a)
+{
+	double f;
+
+	f = sqrt( (a.re * a.re) + (a.im * a.im) );
+
+	return f;
+}
+
 
 double  simpleComplexMod (const struct simpleComplex<double> &a)
 {
@@ -1416,6 +1475,14 @@ void std_base_state( simpleComplex<T> *tbl, int state )
     }
 }
 
+template <typename T, size_t SIZE>
+void coherent_state( simpleComplex<T> *tbl, T alpha )
+{
+	//x = basis(N, 0)
+	//a = destroy(N)
+	//D = (alpha * a.dag() - conj(alpha) * a).expm()
+	//return D * x
+}
 
 
 //------------------------------------------------------------------------------------------------------------
@@ -1596,6 +1663,16 @@ bool inverse_of_matrix(const uMatrix<T, SIZE> &M, uMatrix<T, SIZE> &A_inv)
   return true;
 }
 
+template <typename T, int SIZE>
+void matprod(uMatrix<T, SIZE> &A, uMatrix<T, SIZE> &B, uMatrix<T, SIZE> &C);
+
+template <typename T, int SIZE>	
+void matcopy(uMatrix<T, SIZE> &A, uMatrix<T, SIZE> &B);
+
+template <typename T, int SIZE>
+static void matexp_pade(const long int p, uMatrix< simpleComplex<T>, SIZE> &A, uMatrix< simpleComplex<T>, SIZE> &N);
+
+
 template <typename T, size_t SIZE>
 void eye_of_matrix(uMatrix<T, SIZE> &m)
 {
@@ -1651,7 +1728,6 @@ void pauli_z_matrix( uVector< T, SIZE > &v)
     v[0] = make_simpleComplex(1.0, 0.0); v[1] = make_simpleComplex( 0.0, 0.0);
     v[2] = make_simpleComplex(0.0, 0.0); v[3] = make_simpleComplex(-1.0, 0.0);	
 }
-
 
 template <typename T, size_t SIZE>
 void transpose_of_matrix( uMatrix< T, SIZE > &m )
@@ -1748,12 +1824,18 @@ void make_x_operator( uMatrix< T, SIZE > &m )
 	}
 }
 
+template <typename T, size_t SIZE>
+void sigma_m_matrix( uMatrix< T, SIZE > &v)
+{
+    v(0,0) = make_simpleComplex(0.0, 0.0); v(0,1) = make_simpleComplex(0.0, 0.0);
+    v(1,0) = make_simpleComplex(1.0, 0.0); v(1,1) = make_simpleComplex(0.0, 0.0);	
+}
+
 
 template <typename T, size_t SIZE>
 T norminf(const uMatrix<T, SIZE> &m)
 {
     size_t i,j;
-    //simpleComplex<T> tmp;
 
     T t = 0.0;
     T r = 0.0;
@@ -1804,7 +1886,6 @@ void zerovector( uVector< struct simpleComplex<T>, SIZE > &v)
     }
 }
 
-
 template <typename T, size_t SIZE1, size_t SIZE2>
 uMatrix<simpleComplex<T>, SIZE1*SIZE2>  tensor(uMatrix<simpleComplex<T>, SIZE1> &m1, uMatrix<simpleComplex<T>, SIZE2> &m2)
 {
@@ -1851,7 +1932,7 @@ uMatrix<simpleComplex<T>, SIZE1*SIZE2>  tensor(uMatrix<simpleComplex<T>, SIZE1> 
 }
 
 template <typename T, size_t SIZE>
-uMatrix<T, SIZE*SIZE*SIZE>  tensor(uMatrix<T, SIZE> &m1, uMatrix<T, SIZE> &m2,  uMatrix<T, SIZE> &m3)
+uMatrix<T, SIZE*SIZE*SIZE>  tensor(const uMatrix<simpleComplex<T>, SIZE> &m1, const uMatrix<simpleComplex<T>, SIZE> &m2, const uMatrix<simpleComplex<T>, SIZE> &m3)
 {
 	uMatrix<T, SIZE*SIZE*SIZE>  tmp;
 	
