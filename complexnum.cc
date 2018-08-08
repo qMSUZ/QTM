@@ -1,4 +1,4 @@
-#include <math.h>
+#include <cmath>
 
 /***************************************************************************
  *   Copyright (C) 2017 -- 2018 by Marek Sawerwain                         *
@@ -33,7 +33,11 @@
    Awad H. Al-Mohy and Nicholas J. Higham, August 2009.
    
    Implementation is based on the code:   
-   https://github.com/cran/expm
+	https://github.com/cran/expm/blob/master/src/matexp_MH09.c
+	by  Drew Schmidt (2013-2014) and Martin Maechle (2014)
+   from 
+	https://github.com/cran/expm
+   
    
 */
 

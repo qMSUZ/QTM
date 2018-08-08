@@ -40,7 +40,7 @@ const size_t N = 100;
 const size_t WAVEVECTOR_LEAD_DIM = 8*8*8;
 const size_t WAVEVECTOR_LEAD_DIM_SQR = WAVEVECTOR_LEAD_DIM*WAVEVECTOR_LEAD_DIM;
 
-uCSRMatrix< simpleComplex<double> > c_ops[3];
+uCSRMatrix< simpleComplex<double> > c_ops[COLLAPSE_OPERATORS];
 
 uCSRMatrix< simpleComplex<double> > co0(448, 513, 448);
 uCSRMatrix< simpleComplex<double> > co1(448, 513, 448);

@@ -97,30 +97,160 @@ struct uMatrix {
     { return m[r*cols + c]; }
 };
 
-template <typename T, size_t _S_ValueSize, size_t _S_RowPtr, size_t _S_ColInd>
+template <typename T>
 struct uCSRMatrix {
 
     unsigned int _values_size,  _row_ptr, _col_ind;
+	
+    T *values;
+    unsigned int *row_ptr;
+    unsigned int *col_ind;	
 
     uCSRMatrix()
+    {
+        _values_size = 0;
+        _row_ptr = 0;
+        _col_ind = 0;
+		
+		values = nullptr;
+		row_ptr = nullptr;
+		col_ind = nullptr;
+    }
+
+	
+    uCSRMatrix(size_t _S_ValueSize, size_t _S_RowPtr, size_t _S_ColInd)
     {
         _values_size = _S_ValueSize;
         _row_ptr = _S_RowPtr;
         _col_ind = _S_ColInd;
+		
+		values = new T[_values_size];
+		row_ptr = new unsigned int[_row_ptr];
+		col_ind = new unsigned int[_col_ind];
     }
+	
+	uCSRMatrix(const uCSRMatrix &m)
+	{
+		unsigned int i;
 
-    uVector< T, _S_ValueSize > values;
+        _values_size = m._values_size;
+        _row_ptr = m._row_ptr;
+        _col_ind = m._col_ind;
+		
+		values = new T[_values_size];
+		row_ptr = new unsigned int[_row_ptr];
+		col_ind = new unsigned int[_col_ind];
+		
+		for(i=0;i<_values_size;i++)
+		{
+			values[i] = m.values[i];
+			col_ind[i] = m.col_ind[i];
+		}
+		
+		for(i=0;i<_row_ptr;i++)
+		{
+			row_ptr[i] = m.row_ptr[i];
+		}
+	}
+	
+	uCSRMatrix& operator=( const uCSRMatrix &m )
+	{
+		unsigned int i;
 
-    uVector< unsigned int, _S_RowPtr> row_ptr;
-    uVector< unsigned int, _S_ColInd> col_ind;
+		if(col_ind != nullptr) delete [] col_ind;
+		if(row_ptr != nullptr) delete [] row_ptr;
+		if(values != nullptr) delete [] values;
+		
+        _values_size = m._values_size;
+        _row_ptr = m._row_ptr;
+        _col_ind = m._col_ind;
+		
+		values = new T[_values_size];
+		row_ptr = new unsigned int[_row_ptr];
+		col_ind = new unsigned int[_col_ind];
+		
+		for(i=0;i<_values_size;i++)
+		{
+			values[i] = m.values[i];
+			col_ind[i] = m.col_ind[i];
+		}
+		
+		for(i=0;i<_row_ptr;i++)
+		{
+			row_ptr[i] = m.row_ptr[i];
+		}
+		
+		return *this;
+	}
+	
+	~uCSRMatrix()
+	{
+		delete [] col_ind;
+		delete [] row_ptr;
+		delete [] values;
+	}
 
 };
 
+template<typename T, size_t SIZE>
+void csr_matrix_scan(const uMatrix< simpleComplex<T>, SIZE > &m, size_t &_values_size_ref, size_t &_row_ptr_ref, size_t &_col_ind_ref)
+{
+	int i;
+	size_t _values_size = 0,  _row_ptr = 0, _col_ind = 0;
+	
+	simpleComplex<T> t;
+	
+	for(i=0;i<SIZE*SIZE;i++)
+	{
+		t = m.m[i];
+		
+		if( !((t.re ==0) && (t.im==0)) ) _values_size++;
+	}
+	
+	_row_ptr = SIZE + 1;
+	
+	_values_size_ref = _values_size;
+	_row_ptr_ref = _row_ptr;
+	_col_ind_ref = _values_size;
+}
 
+template<typename T, size_t SIZE>
+uCSRMatrix< simpleComplex<T> > uMatrix_to_uCSRMatrix(const uMatrix< simpleComplex<T>, SIZE > &m)
+{
+	size_t _values_size = 0,  _row_ptr = 0, _col_ind = 0, v, r, i, j;
+
+	simpleComplex<T> t;
+
+	csr_matrix_scan(m, _values_size,  _row_ptr, _col_ind);
+
+	uCSRMatrix< simpleComplex<T> > retcsrmat(_values_size,  _row_ptr, _col_ind);
+	
+	v=0; r=0;
+	for(i=0;i<SIZE;i++)
+	{
+		for(j=0;j<SIZE;j++)
+		{
+			t = m(i,j);
+			if( !((t.re ==0) && (t.im==0)) )
+			{
+				retcsrmat.values[v]=t;
+				retcsrmat.col_ind[v]=j;
+				v++;
+				r++;
+			}
+		}
+		retcsrmat.row_ptr[i+1]=r;
+	}	
+	retcsrmat.row_ptr[0]=0;
+	
+	return retcsrmat;
+}
+
+#if 0
 template <typename T, size_t _S_ValueSize, size_t _S_RowPtr, size_t _S_ColInd, size_t SIZE>
 struct uCSRMatrix<T, _S_ValueSize, _S_RowPtr, _S_ColInd> make_uCSRMatrix(  struct uMatrix< T, SIZE> m )
 {
-    struct uCSRMatrix<T, _S_ValueSize, _S_RowPtr, _S_ColInd> csr_m;
+    struct uCSRMatrix<T> csr_m(_S_ValueSize, _S_RowPtr, _S_ColInd);
 
     int i, idx, rowptridx, row, lastrow, lastcol;
 
@@ -160,14 +290,15 @@ struct uCSRMatrix<T, _S_ValueSize, _S_RowPtr, _S_ColInd> make_uCSRMatrix(  struc
 
     return csr_m;
 }
+#endif
 
-template<typename T, size_t v_size, size_t _S_ValueSize, size_t _S_RowPtr, size_t _S_ColInd>
-uVector< T, v_size> mulCSRMatByuVec(uCSRMatrix<T, _S_ValueSize, _S_RowPtr, _S_ColInd> m, uVector< T, v_size> x)
+template<typename T, size_t v_size>
+uVector< simpleComplex<T>, v_size> mulCSRMatByuVec(const uCSRMatrix< simpleComplex<T> > &m, const uVector< simpleComplex<T>, v_size> &x)
 {
     size_t i, j;
 
 
-    uVector< T, v_size>  y;
+    uVector< simpleComplex<T>, v_size>  y;
 
     for ( i=0; i < v_size; i++)
     {
@@ -1253,11 +1384,11 @@ T expect_cnv_denmat_ver2( size_t sx, size_t sy,  const uVector<  T, SIZE1 > &m, 
         return n1;
 }
 
-template <typename T, size_t _S_ValueSize, size_t _S_RowPtr, size_t _S_ColInd, size_t v_size >
-T expect_cnv_csrdenmat(const struct uCSRMatrix< T, _S_ValueSize, _S_RowPtr, _S_ColInd> &m, const uVector< T, v_size > &state)
+template <typename T, size_t v_size >
+simpleComplex<T> expect_cnv_csrdenmat(const uCSRMatrix< simpleComplex<T> > &m, const uVector< simpleComplex<T>, v_size > &state)
 {
-    struct simpleComplex<double> r, tmp;
-    uVector< simpleComplex<double>, v_size > vtmp;
+    simpleComplex<T> r, tmp;
+    uVector< simpleComplex<T>, v_size > vtmp;
     size_t i;
 
     for(i=0;i<v_size;i++)
@@ -1525,7 +1656,7 @@ template <typename T>
 inline ostream& operator<< (ostream & output, const simpleComplex<T> & c)
 {
 
-#define width 6
+#define width 4
 
   //fixed
   output << right << setprecision(width) << fixed << "(" << setw(width+3) << c.re << ", " << setw(width+3) << c.im << ")";
