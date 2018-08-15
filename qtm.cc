@@ -479,23 +479,28 @@ int process_trajectories(double _from_time, double _to_time,
 		istate = 1;
 		
 #ifdef __USE_DENSE_EXPECT_OPERATORS
-			if(use_expecation_operator == 0)
-			{
-				//ev = expect_cnv_denmat< simpleComplex<double>, _WV_LEAD_DIM_SQR,_WV_LEAD_DIM>(_WV_LEAD_DIM, _WV_LEAD_DIM, id_operator, Y);
-			}
-			if(use_expecation_operator == 1)
-			{
-				ev = expect_cnv_denmat< simpleComplex<double>, _WV_LEAD_DIM_SQR, _WV_LEAD_DIM>(_WV_LEAD_DIM, _WV_LEAD_DIM, expect_operator, Y);
-				//printf("ev=%f\n", ev.re); fflush(stdout);
-			} 
+		if(use_expecation_operator == 0)
+		{
+			//ev = expect_cnv_denmat< simpleComplex<double>, _WV_LEAD_DIM_SQR,_WV_LEAD_DIM>(_WV_LEAD_DIM, _WV_LEAD_DIM, id_operator, Y);
+		}
+		if(use_expecation_operator == 1)
+		{
+			ev = expect_cnv_denmat< simpleComplex<double>, _WV_LEAD_DIM_SQR, _WV_LEAD_DIM>(_WV_LEAD_DIM, _WV_LEAD_DIM, expect_operator, Y);
+			//printf("ev=%f\n", ev.re); fflush(stdout);
+		} 
 #endif			
 #ifdef __USE_SPARSE_CSR_EXPECT_OPERATORS
-			if(use_expecation_operator == 2)
-			{
-				
-				ev = expect_cnv_csrdenmat(expect_operator, Y);
-			} 
+		if(use_expecation_operator == 2)
+		{
+			ev = expect_cnv_csrdenmat(expect_operator, Y);
+		} 
 #endif
+#ifdef __USER_EXPECT_OPERATORS
+		if(use_expecation_operator == 3)
+		{
+		}
+#endif
+
 			pt_trjs[trj][0] = ev;
 
 
@@ -642,6 +647,8 @@ int process_trajectories(double _from_time, double _to_time,
 							#ifdef __USE_SPARSE_CSR_COLLAPSE_OPERATORS
 								Y_tmp = mulCSRMatByuVec(c_ops[j], Y);
 							#endif
+							#ifdef __USER_COLLAPSE_OPERATORS
+							#endif
 								P[j].re = norm ( Y_tmp );
 								P[j].im = 0.0;
 							}
@@ -663,6 +670,8 @@ int process_trajectories(double _from_time, double _to_time,
 								#endif								
 								#ifdef __USE_SPARSE_CSR_COLLAPSE_OPERATORS
 									Y = mulCSRMatByuVec(c_ops[j], Y);
+								#endif
+								#ifdef __USER_COLLAPSE_OPERATORS
 								#endif
 								}
 								sump = sump + P[j].re ;
@@ -707,6 +716,11 @@ int process_trajectories(double _from_time, double _to_time,
 				if(use_expecation_operator == 2)
 				{
 					ev = expect_cnv_csrdenmat(expect_operator, out_psi);
+				}
+#endif
+#ifdef __USER_EXPECT_OPERATORS
+				if(use_expecation_operator == 3)
+				{
 				}
 #endif
 				pt_trjs[trj][k].re = ev.re;

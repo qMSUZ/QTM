@@ -77,13 +77,33 @@ struct uMatrix {
 
     uMatrix() {
         _size = SIZE * SIZE;
-         rows = SIZE;
-         cols = SIZE;
+        rows  = SIZE;
+        cols  = SIZE;
     }
 
     uVector< T, SIZE * SIZE > m;
 
-
+#if 0
+	uMatrix& operator=( const uMatrix &othmat )
+	{
+		unsigned int i;
+		
+		for(i=0;i<othmat._size;i++)
+		{
+			_size = othmat._size;
+			
+			rows  = othmat.rows;
+			cols  = othmat.cols;
+			
+			m.size = othmat.m.size;
+			
+			m[i] = othmat.m[i];
+		}
+		
+		return *this;
+	}
+#endif
+	
     // get size
     inline unsigned int size() const
     { return _size; }
@@ -826,6 +846,41 @@ struct uMatrix<T, SIZE> operator-(const struct uMatrix<T, SIZE> &m1, const struc
     return vtmp;
 }
 
+// scalar and matrix difference
+
+template <typename T, size_t SIZE>
+struct uMatrix<simpleComplex<T>, SIZE> operator-(const simpleComplex<T> &s, const struct uMatrix<simpleComplex<T>, SIZE> &m)
+{
+    unsigned int i, j;
+    struct uMatrix<simpleComplex<T>, SIZE> vtmp;
+
+    for( i=0 ; i<m.rows ; i++)
+    {
+        for( j=0; j < m.cols ; j++)
+        {
+            vtmp(i,j) = s - m(i,j);
+        } // for( k=0; k < sy ; k++)
+    } // for( i=0 ; i<m.cols ; i++)
+
+    return vtmp;
+}
+
+template <typename T, size_t SIZE>
+struct uMatrix<simpleComplex<T>, SIZE> operator-(const struct uMatrix<simpleComplex<T>, SIZE> &m, const simpleComplex<T> &s)
+{
+    unsigned int i, j;
+    struct uMatrix<simpleComplex<T>, SIZE> vtmp;
+
+    for( i=0 ; i<m.rows ; i++)
+    {
+        for( j=0; j < m.cols ; j++)
+        {
+            vtmp(i,j) = m(i,j) - s;
+        } // for( k=0; k < sy ; k++)
+    } // for( i=0 ; i<m.cols ; i++)
+
+    return vtmp;
+}
 
 // scalar and matrix mul
 
@@ -1647,6 +1702,20 @@ uVector< struct simpleComplex<T>, SIZE > coherent( struct simpleComplex<T> alpha
 	return D * x;
 }
 
+template <typename T, size_t SIZE>
+void coherent( simpleComplex<T> *tbl, struct simpleComplex<T> alpha)
+{
+	size_t i;
+	uVector< struct simpleComplex<T>, SIZE > r;
+	
+	r = coherent<T, SIZE>(alpha);
+	
+    for(i=0; i<SIZE; i++)
+    {
+        tbl[i] = r[i];
+    }	
+}
+
 
 //------------------------------------------------------------------------------------------------------------
 // global output operator<< for simpleComplex<T>
@@ -1656,7 +1725,7 @@ template <typename T>
 inline ostream& operator<< (ostream & output, const simpleComplex<T> & c)
 {
 
-#define width 4
+#define width 5
 
   //fixed
   output << right << setprecision(width) << fixed << "(" << setw(width+3) << c.re << ", " << setw(width+3) << c.im << ")";
@@ -2093,12 +2162,45 @@ uMatrix<simpleComplex<T>, SIZE1*SIZE2>  tensor(uMatrix<simpleComplex<T>, SIZE1> 
 	return tmp;
 }
 
-template <typename T, size_t SIZE>
-uMatrix<T, SIZE*SIZE*SIZE>  tensor(const uMatrix<simpleComplex<T>, SIZE> &m1, const uMatrix<simpleComplex<T>, SIZE> &m2, const uMatrix<simpleComplex<T>, SIZE> &m3)
+template <typename T, size_t SIZE1, size_t SIZE2>
+void tensor(simpleComplex<T> *m1, simpleComplex<T> *m2, simpleComplex<T>  *m3)
 {
-	uMatrix<T, SIZE*SIZE*SIZE>  tmp;
-	
-	return tmp;
+
+	int x,y,i,j,ii,jj;
+    simpleComplex<T> num;
+
+	for(i=0;i<SIZE1*SIZE2;i++)
+    {
+		m3[i].re=0.0;
+		m3[i].im=0.0;
+	}
+
+    ii=0;
+    jj=0;
+    for(x=0;x<SIZE1;x++)
+    {
+        for(y=0;y<1;y++)
+        {
+            ii=(x*SIZE2);
+            jj=(y*1);
+            for(i=0;i<SIZE2;i++)
+            {
+                for(j=0;j<1;j++)
+                {
+                    num.re=0.0;
+                    num.im=0.0;
+
+					num = m1[x] * m2[i];
+				 
+					m3[ii] = num;
+					 
+                    jj++;
+                }
+                ii++;
+                jj-=1;
+            }
+        }
+    }
 }
 
 

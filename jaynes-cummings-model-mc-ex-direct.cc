@@ -29,19 +29,20 @@
 #define __USE_BDF METBDF
 
 #include "complexnum.h"
-#include "complexnum.cc"
 #include "qtm.h" 
 
 const size_t Ntrj = 1;
 const size_t N = 600;
 const size_t WAVEVECTOR_LEAD_DIM = 80;
-const size_t WAVEVECTOR_LEAD_DIM_SQR = WAVEVECTOR_LEAD_DIM*WAVEVECTOR_LEAD_DIM;
+const size_t WAVEVECTOR_LEAD_DIM_SQR = 80*80;
 
 uMatrix< simpleComplex<double>, WAVEVECTOR_LEAD_DIM > c_ops[ 1 ];
-uVector< simpleComplex<double>, 1 > collapse_operator;
+uVector< simpleComplex<double>, WAVEVECTOR_LEAD_DIM_SQR > collapse_operator;
 
-uCSRMatrix< simpleComplex<double> > expect_operator;
-uCSRMatrix< simpleComplex<double> > H;
+// template <typename T, size_t _S_ValueSize, size_t _S_RowPtr, size_t _S_ColInd>
+
+uCSRMatrix< simpleComplex<double> > expect_operator(40, 81, 40);
+uCSRMatrix< simpleComplex<double> > H(158, 81, 158);
 
 simpleComplex<double> alpha[WAVEVECTOR_LEAD_DIM];
 
@@ -78,65 +79,23 @@ int myfex_fnc_f1(	long int *NEQ,
 int prepare_matrices()
 {
 	int i;
-	simpleComplex<double> m, mhalf, alphaval;
+	simpleComplex<double> moneimag;
 
-	uMatrix< simpleComplex<double>, WAVEVECTOR_LEAD_DIM > a, sigmaminus, Hsys, eops;
+	moneimag.re=0.0;
+	moneimag.im=-1.0;
 	
-	uMatrix< simpleComplex<double>, WAVEVECTOR_LEAD_DIM/2 > d, big_id;
-	uMatrix< simpleComplex<double>, 2 > small_id, sigmam;
-	
-	simpleComplex<double> c[WAVEVECTOR_LEAD_DIM/2];
-	simpleComplex<double> b[2];
-	
-	double g = 1.0;
-	double delta = -0.1;
-
-	m.re=0.0;
-	m.im=-1.0;
-	
-	mhalf.re=0.0;
-	mhalf.im=-0.5f;
-	
-	alphaval = make_simpleComplex(4.0, 0.0);
-	
-	zero_matrix(a);
-	zero_matrix(sigmaminus);
-	zero_matrix(Hsys);
-	zero_matrix(eops);
-	
-	zero_matrix(d);
-	zero_matrix(big_id);
-	zero_matrix(small_id);
-	zero_matrix(sigmam);
-	
-	destroy_operator( d );
-	
-	eye_of_matrix(small_id);
-	eye_of_matrix(big_id);
-	sigma_m_matrix(sigmam);
-	
-	a = tensor(d, small_id);
-	sigmaminus = tensor(big_id, sigmam);
-		
-	Hsys = (delta * dagger(a) * a) + (g * (dagger(a) * sigmaminus  + a * dagger(sigmaminus )));
-	eops = dagger(sigmaminus) * sigmaminus;
-	
-	coherent<double, WAVEVECTOR_LEAD_DIM/2>( &c[0], alphaval);
-	std_base_state<double, 2>(&b[0], 1);
-	
-	tensor<double, WAVEVECTOR_LEAD_DIM/2, 2>( &c[0], &b[0], &alpha[0]);
-
-	H = uMatrix_to_uCSRMatrix(Hsys);	
-	expect_operator = uMatrix_to_uCSRMatrix(eops);
+	#include "data-h-jcm.txt"
+	#include "data-eops-jcm.txt"	
+	#include "data-alpha-jcm.txt"
 	
 	for(i=0;i<H._values_size;i++)
 	{
-		H.values[i] = m * H.values[i];
+		H.values[i] = moneimag * H.values[i];
 	}
 
+	
 	return 0;
 }
-
 
 int main(int argc, char *argv[])
 {
@@ -153,10 +112,11 @@ int main(int argc, char *argv[])
 	opt.file_name = strdup("output-data-matplotfig.py");
 	opt.fnc = &myfex_fnc_f1;
 	
-	
 	r = mpi_main<N, Ntrj, WAVEVECTOR_LEAD_DIM, WAVEVECTOR_LEAD_DIM_SQR, 0>(argc, argv,
 	0.0, 35.0, 
 	0, __USE_SPARSE_CSR_EXPECT_OPERATORS, opt);
+
+
 	
 	return r;
 }
