@@ -46,16 +46,6 @@ typedef simpleComplex<double> dblcmplx;
 template <typename T>
 struct simpleComplex<T> make_simpleComplex (T r, T i);
 
-
-/*
-template <typename T>
-struct simpleCmplxMatrix {
-    unsigned int rows, cols;
-    std::vector< simpleComplex<T> > m;
-};
-*/
-
-
 template <typename T, size_t v_size>
 struct uVector {
 
@@ -83,27 +73,6 @@ struct uMatrix {
 
     uVector< T, SIZE * SIZE > m;
 
-#if 0
-	uMatrix& operator=( const uMatrix &othmat )
-	{
-		unsigned int i;
-		
-		for(i=0;i<othmat._size;i++)
-		{
-			_size = othmat._size;
-			
-			rows  = othmat.rows;
-			cols  = othmat.cols;
-			
-			m.size = othmat.m.size;
-			
-			m[i] = othmat.m[i];
-		}
-		
-		return *this;
-	}
-#endif
-	
     // get size
     inline unsigned int size() const
     { return _size; }
@@ -266,52 +235,6 @@ uCSRMatrix< simpleComplex<T> > uMatrix_to_uCSRMatrix(const uMatrix< simpleComple
 	return retcsrmat;
 }
 
-#if 0
-template <typename T, size_t _S_ValueSize, size_t _S_RowPtr, size_t _S_ColInd, size_t SIZE>
-struct uCSRMatrix<T, _S_ValueSize, _S_RowPtr, _S_ColInd> make_uCSRMatrix(  struct uMatrix< T, SIZE> m )
-{
-    struct uCSRMatrix<T> csr_m(_S_ValueSize, _S_RowPtr, _S_ColInd);
-
-    int i, idx, rowptridx, row, lastrow, lastcol;
-
-    idx=0;
-    rowptridx=1;
-    row=0;
-    lastrow=0;
-    lastcol=-1;
-
-
-    csr_m.row_ptr[0]=0;
-    for(i=0;i<m.rows * m.cols;i++)
-    {
-
-        if (m.m[i].re!=0.0)
-        {
-            csr_m.values[idx] = m.m[i];
-            csr_m.col_ind[idx] = i % m.cols;
-
-            row = i / m.cols; 
-            if( row != lastrow )
-            {
-                    lastrow = row;
-                    csr_m.row_ptr[rowptridx]=idx;
-                    rowptridx++;
-            }
-            
-            idx++;
-
-        }
-    }
-    csr_m.row_ptr[rowptridx]=idx;
-
-    csr_m._values_size = idx;
-    csr_m._col_ind = idx;
-    csr_m._row_ptr = SIZE+1;
-
-    return csr_m;
-}
-#endif
-
 template<typename T, size_t v_size>
 uVector< simpleComplex<T>, v_size> mulCSRMatByuVec(const uCSRMatrix< simpleComplex<T> > &m, const uVector< simpleComplex<T>, v_size> &x)
 {
@@ -339,35 +262,6 @@ uVector< simpleComplex<T>, v_size> mulCSRMatByuVec(const uCSRMatrix< simpleCompl
 template <typename T, size_t SIZE>
 void exp_of_matrix(uMatrix< simpleComplex<T>, SIZE> &x, const long int p, uMatrix< simpleComplex<T>, SIZE> &ret);
 
-#if 0
-template <typename T>
-struct simpleCmplxMatrix {
-
-    unsigned int rows, cols;
-
-    std::vector< simpleComplex<T> > m;
-
-    //constructors
-
-    inline simpleCmplxMatrix() {};
-
-    inline simpleCmplxMatrix(const unsigned int Rows, const unsigned int Cols)
-      : rows(Rows), cols(Cols) { m.resize(rows*cols); }
-
-    // get size
-    inline unsigned int size() const
-    { return m.size(); }
-
-    // function operator() for indexing:  for reading (r)-rows, (c)-cols
-    inline const simpleComplex<T> & operator()(const unsigned int r, const unsigned int c) const
-    { return m[r*cols + c]; }
-
-    // function operator() for indexing:  for writing (r)-rows, (c)-cols
-    inline simpleComplex<T> & operator()(const unsigned int r, const unsigned int c)
-    { return m[r*cols + c]; }
-};
-#endif
-
 template <typename T>
 struct simpleComplex<T> operator+(const struct simpleComplex<T> &a, const struct simpleComplex<T> &b);
 
@@ -388,11 +282,6 @@ struct simpleComplex<T> operator*(const T &a, const struct simpleComplex<T> &b);
 template <typename T>
 struct simpleComplex<T> operator*(const struct simpleComplex<T> &a, const T &b);
 
-
-/*template <typename T>
-const std::vector< struct simpleComplex<T> > operator*(const T &a, const std::vector< struct simpleComplex<T> > &v);
-*/
-
 template <typename T>
 struct simpleComplex<T> operator/(const struct simpleComplex<T> &a, const struct simpleComplex<T> &b);
 
@@ -401,7 +290,6 @@ struct simpleComplex<T> operator/(const T &_a, const struct simpleComplex<T> &b)
 
 template <typename T>
 struct simpleComplex<T> operator/(const struct simpleComplex<T> &a, const T &_b);
-
 
 
 double simpleComplexAbs (const struct simpleComplex<double> &a);
@@ -1016,27 +904,6 @@ struct uMatrix<T, SIZE> operator*(const struct uMatrix<T, SIZE> &m1, const struc
     return vtmp;
 }
 
-#if 0
-// matrix and vector mult
-template <typename T>
-const std::vector< struct simpleComplex<T> > operator*(const struct simpleCmplxMatrix<T> &m, const std::vector< struct simpleComplex<T> > &v)
-{
-    unsigned int i, k;
-    std::vector< struct simpleComplex<T> > vtmp( m.rows );
-
-    for( i=0 ; i<m.cols ; i++)
-    {
-        vtmp[i] = make_simpleComplex(0.0, 0.0);
-        for( k=0; k < m.rows ; k++)
-        {
-            vtmp[i] = vtmp[i] + m.m[ i * m.rows + k] * v[k];
-        } // for( k=0; k < sy ; k++)
-    } // for( i=0 ; i<m.cols ; i++)
-
-    return vtmp;
-}
-#endif
-
 template <typename T, size_t SIZE>
 const uVector< T, SIZE > operator*(const struct uMatrix<T, SIZE> &m, const uVector< T, SIZE > &v)
 {
@@ -1054,51 +921,6 @@ const uVector< T, SIZE > operator*(const struct uMatrix<T, SIZE> &m, const uVect
 
     return vtmp;
 }
-
-#if 0
-template <typename T>
-struct simpleComplex<T> expect( int sx, int sy,  const std::vector< struct simpleComplex<T> > &m, const std::vector< struct simpleComplex<T> > &state)
-{
-        int i, j, k;
-
-        struct simpleComplex<T> n1, n2;
-        std::vector< struct simpleComplex<T> > tmp ( sx*sy );
-
-
-        for(k=0; k < sy ; k++)
-        {
-            tmp[k] = make_simpleComplex(0.0, 0.0);
-        }
-
-
-        for(i=0 ; i<sx ; i++)
-        {
-            for(j=0; j < sy; j++)
-            {
-                for( k=0; k < sy ; k++)
-                {
-                    n1 = tmp[i*sy+j];
-
-                    n2 = ( m[i*sy+k] * state[k*sy+j] );
-
-                    tmp[i*sy+j] = n1 + n2;
-                }
-            }
-        }
-
-        n1.re=0;
-        n1.im=0;
-
-        for(k=0; k < sy ; k++)
-        {
-           //cout << " i: " << k*sy + k;
-
-           n1 = n1 + tmp[ k*sy + k ];
-        }
-
-        return n1;
-}
-#endif
 
 template <typename T, size_t SIZE>
 struct simpleComplex<T> expect( size_t sx, size_t sy,  const uVector< struct simpleComplex<T>, SIZE > &m, const uVector< struct simpleComplex<T>, SIZE > &state)
@@ -1187,110 +1009,6 @@ struct simpleComplex<T> expect( size_t sx, size_t sy, uMatrix< simpleComplex<T>,
 
         return n1;
 }
-
-#if 0
-template <typename T>
-struct simpleComplex<T> expect( int sx, int sy,  struct simpleComplex<T> m[], struct simpleComplex<T> state[] )
-{
-        int i, j, k;
-
-        struct simpleComplex<T> n1, n2;
-        struct simpleComplex<T> tmp [ sx*sy ];
-
-
-        for(k=0; k < sy ; k++)
-        {
-            tmp[k] = make_simpleComplex(0.0, 0.0);
-        }
-
-
-        for(i=0 ; i<sx ; i++)
-        {
-            for(j=0; j < sy; j++)
-            {
-                for( k=0; k < sy ; k++)
-                {
-                    n1 = tmp[i*sy+j];
-
-                    n2 = ( m[i*sy+k] * state[k*sy+j] );
-
-                    tmp[i*sy+j] = n1 + n2;
-                }
-            }
-        }
-
-        n1.re=0;
-        n1.im=0;
-
-        for(k=0; k < sy ; k++)
-        {
-           //cout << " i: " << k*sy + k;
-
-           n1 = n1 + tmp[ k*sy + k ];
-        }
-
-        return n1;
-}
-#endif
-
-#if 0
-template <typename T>
-struct simpleComplex<T> expect_cnv_denmat( int sx, int sy,  const std::vector< struct simpleComplex<T> > &m, const std::vector< struct simpleComplex<T> > &state)
-{
-        int i, j, k;
-
-        struct simpleComplex<T> n1, n2;
-        std::vector< struct simpleComplex<T> > tmp ( sx*sy );
-        std::vector< struct simpleComplex<T> > matden ( sx*sy );
-
-
-        for(k=0; k < sx*sy ; k++)
-        {
-            tmp[k] = make_simpleComplex(0.0, 0.0);
-        }
-
-        for(i=0 ; i<sx ; i++)
-        {
-            for(j=0; j < sy; j++)
-            {
-                n1 = state[i];
-                n2 = state[j];
-                n2.im = -n2.im;
-                matden[ i*sy+j ] = n1 * n2;
-            }
-        }
-
-        //print_Y( matden );
-
-        for(i=0 ; i<sx ; i++)
-        {
-            for(j=0; j < sy; j++)
-            {
-                for( k=0; k < sy ; k++)
-                {
-                    n1 = tmp[i*sy+j];
-
-                    n2 = ( m[i*sy+k] * matden[k*sy+j] );
-
-                    tmp[i*sy+j] = n1 + n2;
-                }
-            }
-        }
-
-        n1.re=0;
-        n1.im=0;
-
-        for(k=0; k < sy ; k++)
-        {
-           //cout << " i: " << k*sy + k;
-
-           n1 = n1 + tmp[ k*sy + k ];
-        }
-
-        return n1;
-
-}
-#endif
 
 template <typename T, size_t SIZE1, size_t SIZE2 >
 T expect_cnv_denmat( size_t sx, size_t sy,  const uVector< T, SIZE1 > &m, const uVector< T, SIZE2 > &state)
@@ -1485,30 +1203,6 @@ const uVector< struct simpleComplex<T>, SIZE2 >  mul_mat_vec ( size_t sx, size_t
 
 }
 
-#if 0
-template <typename T>
-T norm( const std::vector< struct simpleComplex<T> > &m )
-{
-    int i;
-    simpleComplex<T>  tmp, cnj;
-    T v = 0.0;
-
-    tmp.re = 0.0;
-    tmp.im = 0.0;
-
-    for (i = 0 ; i < m.size() ; i++)
-    {
-        cnj = m[i];
-        cnj.im =-cnj.im;
-        tmp = tmp + cnj * m[i];
-    }
-
-    v = sqrt(tmp.re * tmp.re + tmp.im * tmp.im);
-
-    return v;
-}
-#endif
-
 template <typename T, size_t SIZE>
 T norm( const uVector< struct simpleComplex<T>, SIZE > &m )
 {
@@ -1531,19 +1225,6 @@ T norm( const uVector< struct simpleComplex<T>, SIZE > &m )
     return v;
 }
 
-
-#if 0
-template <typename T>
-T normsqrt( const std::vector< struct simpleComplex<T> > &m )
-{
-    T v = 0.0;
-
-    v = norm( m );
-
-    return sqrt(v);
-}
-#endif
-
 template <typename T, size_t SIZE>
 T normsqrt( const uVector< struct simpleComplex<T>, SIZE > &m )
 {
@@ -1553,25 +1234,6 @@ T normsqrt( const uVector< struct simpleComplex<T>, SIZE > &m )
 
     return sqrt(v);
 }
-
-#if 0
-template <typename T>
-struct simpleComplex<T> sum( const std::vector< struct simpleComplex<T> > &m )
-{
-    int i;
-    simpleComplex<T>  tmp;
-
-    tmp.re = 0.0;
-    tmp.im = 0.0;
-
-    for (i = 0 ; i < m.size() ; i++)
-    {
-        tmp = tmp + m[i];
-    }
-
-    return tmp;
-}
-#endif
 
 template <typename T, size_t SIZE>
 struct simpleComplex<T> sum( const uVector< struct simpleComplex<T>, SIZE > &m )
@@ -1589,19 +1251,6 @@ struct simpleComplex<T> sum( const uVector< struct simpleComplex<T>, SIZE > &m )
 
     return tmp;
 }
-
-#if 0
-template <typename T>
-void normalize( std::vector< struct simpleComplex<T> > &m )
-{
-
-    T v;
-    v = normsqrt( m );
-
-    m = m / v;
-    return ;
-}
-#endif
 
 template <typename T, size_t SIZE>
 void normalize( uVector< struct simpleComplex<T>, SIZE > &m )
