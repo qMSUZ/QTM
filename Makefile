@@ -36,8 +36,8 @@ MGXX    = g++
 CC      = mpic++
 #CC      = g++
 RUN     = mpirun
-CFLAGS  = -I. -fpermissive
-FCFLAGS = -I. 
+CFLAGS  = -I. -fpermissive -O2
+FCFLAGS = -I. -O2
 
 OUTPUTNAME_U = unitary-ex
 OUTPUTNAME_TRIHAM = triham-ex
@@ -47,8 +47,11 @@ OUTPUTNAME_JCM = jcm-ex
 UNITARY_MAIN_SRC = unitary-mc-ex.cc rgen_lfsr113.cc
 UNITARY_MAIN_SRC_DIRECT = unitary-mc-ex-direct.cc rgen_lfsr113.cc
 TRIHAM_OBJ_SRC = triham-mc-ex.cc rgen_lfsr113.cc
+TRIHAM_OBJ_SRC_DIRECT = triham-mc-ex-direct.cc rgen_lfsr113.cc
 BDPC_OBJ_SRC = bdpc-ex.cc rgen_lfsr113.cc
+BDPC_MAIN_SRC_DIRECT = bdpc-ex-direct.cc rgen_lfsr113.cc
 JCM-MC-EX_SRC = jaynes-cummings-model-mc-ex.cc rgen_lfsr113.cc
+JCM-MC-EX_SRC_DIRECT = jaynes-cummings-model-mc-ex-direct.cc rgen_lfsr113.cc
 
 ZVODE_SRC = zvode.f zgesl.f zgefa.f zgbsl.f zgbfa.f
 
@@ -60,21 +63,30 @@ LIBRARY=
 all:
 
 unitary-ex: $(UNITARY_MAIN_SRC) $(QTM_OBJ_ZVODE_SRC)
-		$(CC) $(UNITARY_MAIN_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_U) -lblas -lgfortran $(LIBRARY)
+		$(CC) $(UNITARY_MAIN_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_U) -lblas -llapack -lgfortran $(LIBRARY)
 
 unitary-ex-direct: $(UNITARY_MAIN_SRC_DIRECT) $(QTM_OBJ_ZVODE_SRC)
-		$(CC) $(UNITARY_MAIN_SRC_DIRECT) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_U) -lblas -lgfortran $(LIBRARY)
+		$(CC) $(UNITARY_MAIN_SRC_DIRECT) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_U) -lblas -llapack -lgfortran $(LIBRARY)
 
 		
 triham-ex: $(TRIHAM_OBJ_SRC) $(QTM_OBJ_ZVODE_SRC)
-		$(CC) $(TRIHAM_OBJ_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_TRIHAM) -lblas -lgfortran $(LIBRARY)
+		$(CC) $(TRIHAM_OBJ_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_TRIHAM) -lblas -llapack -lgfortran $(LIBRARY)
+
+triham-ex-direct: $(TRIHAM_OBJ_SRC_DIRECT) $(QTM_OBJ_ZVODE_SRC)
+		$(CC) $(TRIHAM_OBJ_SRC_DIRECT) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_TRIHAM) -lblas -llapack -lgfortran $(LIBRARY)
 		
 bdpc-ex: $(BDPC_OBJ_SRC) $(QTM_OBJ_ZVODE_SRC)
-		$(CC) $(BDPC_OBJ_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_BDPC) -lblas -lgfortran $(LIBRARY)
+		$(CC) $(BDPC_OBJ_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_BDPC) -lblas -llapack -lgfortran $(LIBRARY)
+
+bdpc-ex-direct: $(BDPC_MAIN_SRC_DIRECT) $(QTM_OBJ_ZVODE_SRC)
+		$(CC) $(BDPC_MAIN_SRC_DIRECT) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_BDPC) -lblas -llapack  -lgfortran $(LIBRARY)
 
 jcm-ex: $(JCM-MC-EX_SRC) $(QTM_OBJ_ZVODE_SRC)
-	$(CC) $(JCM-MC-EX_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_JCM) -lblas -lgfortran $(LIBRARY)
+	$(CC) $(JCM-MC-EX_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_JCM) -lblas -llapack -lgfortran $(LIBRARY)
 	
+jcm-ex-direct: $(JCM-MC-EX_SRC_DIRECT) $(QTM_OBJ_ZVODE_SRC)
+	$(CC) $(JCM-MC-EX_SRC_DIRECT) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_JCM) -lblas -llapack -lgfortran $(LIBRARY)
+
 testlfsr113:
 	$(MGXX) $(CFLAGS) -c rgen_lfsr113.cc
 	$(MGXX) $(CFLAGS) -o testrgen_lfsr113 testrgen_lfsr113.cc rgen_lfsr113.o

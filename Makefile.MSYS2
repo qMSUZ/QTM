@@ -75,13 +75,11 @@ triham-ex: $(TRIHAM_OBJ_SRC) $(QTM_OBJ_ZVODE_SRC)
 triham-ex-direct: $(TRIHAM_OBJ_SRC_DIRECT) $(QTM_OBJ_ZVODE_SRC)
 		$(CC) $(TRIHAM_OBJ_SRC_DIRECT) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_TRIHAM) -lblas -llapack -lgfortran $(LIBRARY)
 
-		
 bdpc-ex: $(BDPC_OBJ_SRC) $(QTM_OBJ_ZVODE_SRC)
 		$(CC) $(BDPC_OBJ_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_BDPC) -lblas -llapack -lgfortran $(LIBRARY)
 
 bdpc-ex-direct: $(BDPC_MAIN_SRC_DIRECT) $(QTM_OBJ_ZVODE_SRC)
 		$(CC) $(BDPC_MAIN_SRC_DIRECT) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_BDPC) -lblas -llapack  -lgfortran $(LIBRARY)
-		
 		
 jcm-ex: $(JCM-MC-EX_SRC) $(QTM_OBJ_ZVODE_SRC)
 	$(CC) $(JCM-MC-EX_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_JCM) -lblas -llapack -lgfortran $(LIBRARY)
