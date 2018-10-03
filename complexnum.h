@@ -46,37 +46,174 @@ typedef simpleComplex<double> dblcmplx;
 template <typename T>
 struct simpleComplex<T> make_simpleComplex (T r, T i);
 
-template <typename T, size_t v_size>
+template <typename T>
 struct uVector {
 
     unsigned int size;
+    T *m;
 
-    uVector() { size = v_size; };
+    uVector()
+	{
+		size = 0;
+		m = nullptr;
+	};
+	
+	uVector(const unsigned int v_size)
+	{
+		size = v_size;
+		m = new T[v_size];
+	}
 
-    T m[ v_size ];
+	uVector( const uVector &v )
+	{
+		unsigned int i;
+		size = v.size;
+		
+		m = new T[v.size];
+		
+		for(i=0;i<v.size;i++)
+		{
+			m[i] = v.m[i];
+		}
+	}
+	
+	uVector& operator=( const uVector &v )
+	{
+		unsigned int i;
+		
+		if(m!=nullptr) delete [] m;
+		
+		size = v.size;
+		
+		m = new T[v.size];
+		
+		for(i=0;i<v.size;i++)
+		{
+			m[i] = v.m[i];
+		}
+		
+		return *this;
+	}
+	
+	void recreate( unsigned int l1, T *_m)
+	{
+		unsigned int i;
+		
+		if( m != nullptr ) delete [] m;
 
-    T& operator[](const size_t idx) { return m[idx]; };
-    const T& operator[](const size_t idx) const { return m[idx]; };
+        size = l1;
+		
+		m = new T[ l1 ];
+		
+		for(i=0;i<size;i++)
+		{
+			m[i] = _m[i];
+		}
+	}	
+	
+	~uVector()
+	{
+		if( m!=nullptr) delete [] m;
+	}
+	
+
+    T& operator[](const unsigned int idx) { return m[idx]; };
+    const T& operator[](const unsigned int idx) const { return m[idx]; };
 
 };
 
-template <typename T, size_t SIZE>
+template <typename T>
 struct uMatrix {
 
-    unsigned int _size,  rows, cols;
+    unsigned int size;
+	unsigned int rows;
+	unsigned int cols;
+
+    T *m;
 
     uMatrix() {
-        _size = SIZE * SIZE;
-        rows  = SIZE;
-        cols  = SIZE;
+        size = 0;
+        rows = 0;
+        cols = 0;
+		
+		m = nullptr;
     }
 
-    uVector< T, SIZE * SIZE > m;
+    uMatrix(const unsigned int l) {
+        size = l*l;
+        rows  = l;
+        cols  = l;
+		
+		m = new T[l*l];
+    }
 
-    // get size
-    inline unsigned int size() const
-    { return _size; }
+    uMatrix(const unsigned int l1, const unsigned int l2) {
+        size = l1*l2;
+        rows  = l1;
+        cols  = l2;
+		
+		m = new T[l1*l2];
+    }
+	
+	uMatrix( const uMatrix &_m )
+	{
+		unsigned int i;
+		
+        size = _m.rows * _m.cols;
+        rows  = _m.rows;
+        cols  = _m.cols;
+		
+		m = new T[ _m.rows * _m.cols ];
+		
+		for(i=0;i<_m.size;i++)
+		{
+			m[i] = _m.m[i];
+		}		
+	}
 
+	uMatrix& operator=( const uMatrix &_m )
+	{
+		unsigned int i;
+		
+		if( m != nullptr ) delete [] m;
+
+        size = _m.rows * _m.cols;
+        rows  = _m.rows;
+        cols  = _m.cols;
+		
+		m = new T[ _m.rows * _m.cols ];
+		
+		for(i=0;i<_m.size;i++)
+		{
+			m[i] = _m.m[i];
+		}
+		
+		return *this;
+	}
+
+	void recreate( unsigned int l1, unsigned int l2, const uVector<T> &_m)
+	{
+		unsigned int i;
+		
+		if( m != nullptr ) delete [] m;
+
+        size = l1 * l2;
+        rows  = l1;
+        cols  = l2;
+		
+		m = new T[ rows * cols ];
+		
+		for(i=0;i<size;i++)
+		{
+			m[i] = _m[i];
+		}
+	}
+	
+	~uMatrix()
+	{
+		if( m != nullptr ) delete [] m;
+	}
+	
     // function operator() for indexing:  for reading (r)-rows, (c)-cols
     inline const T & operator()(const unsigned int r, const unsigned int c) const
     { return m[r*cols + c]; }
@@ -174,37 +311,37 @@ struct uCSRMatrix {
 	
 	~uCSRMatrix()
 	{
-		delete [] col_ind;
-		delete [] row_ptr;
-		delete [] values;
+		if( col_ind != nullptr) delete [] col_ind;
+		if( row_ptr != nullptr) delete [] row_ptr;
+		if( values != nullptr) delete [] values;
 	}
 
 };
 
-template<typename T, size_t SIZE>
-void csr_matrix_scan(const uMatrix< simpleComplex<T>, SIZE > &m, size_t &_values_size_ref, size_t &_row_ptr_ref, size_t &_col_ind_ref)
+template<typename T>
+void csr_matrix_scan(const uMatrix< simpleComplex<T> > &m, size_t &_values_size_ref, size_t &_row_ptr_ref, size_t &_col_ind_ref)
 {
 	int i;
 	size_t _values_size = 0,  _row_ptr = 0, _col_ind = 0;
 	
 	simpleComplex<T> t;
 	
-	for(i=0;i<SIZE*SIZE;i++)
+	for(i=0;i<m.size;i++)
 	{
 		t = m.m[i];
 		
 		if( !((t.re ==0) && (t.im==0)) ) _values_size++;
 	}
 	
-	_row_ptr = SIZE + 1;
+	_row_ptr = m.cols + 1;
 	
 	_values_size_ref = _values_size;
 	_row_ptr_ref = _row_ptr;
 	_col_ind_ref = _values_size;
 }
 
-template<typename T, size_t SIZE>
-uCSRMatrix< simpleComplex<T> > uMatrix_to_uCSRMatrix(const uMatrix< simpleComplex<T>, SIZE > &m)
+template<typename T>
+uCSRMatrix< simpleComplex<T> > uMatrix_to_uCSRMatrix(const uMatrix< simpleComplex<T> > &m)
 {
 	size_t _values_size = 0,  _row_ptr = 0, _col_ind = 0, v, r, i, j;
 
@@ -215,9 +352,9 @@ uCSRMatrix< simpleComplex<T> > uMatrix_to_uCSRMatrix(const uMatrix< simpleComple
 	uCSRMatrix< simpleComplex<T> > retcsrmat(_values_size,  _row_ptr, _col_ind);
 	
 	v=0; r=0;
-	for(i=0;i<SIZE;i++)
+	for(i=0;i<m.rows;i++)
 	{
-		for(j=0;j<SIZE;j++)
+		for(j=0;j<m.cols;j++)
 		{
 			t = m(i,j);
 			if( !((t.re ==0) && (t.im==0)) )
@@ -229,26 +366,36 @@ uCSRMatrix< simpleComplex<T> > uMatrix_to_uCSRMatrix(const uMatrix< simpleComple
 			}
 		}
 		retcsrmat.row_ptr[i+1]=r;
-	}	
+	}
 	retcsrmat.row_ptr[0]=0;
 	
 	return retcsrmat;
 }
 
-template<typename T, size_t v_size>
-uVector< simpleComplex<T>, v_size> mulCSRMatByuVec(const uCSRMatrix< simpleComplex<T> > &m, const uVector< simpleComplex<T>, v_size> &x)
+template<typename T>
+uVector< simpleComplex<T> > uMatrix_to_uVector(const uMatrix< simpleComplex<T> > &m)
+{
+	uVector< simpleComplex<T> > t;
+	
+	t.recreate( m.size, m.m);
+	
+	return t;
+}
+
+template<typename T>
+uVector< simpleComplex<T> > mulCSRMatByuVec(const uCSRMatrix< simpleComplex<T> > &m, const uVector< simpleComplex<T> > &x)
 {
     size_t i, j;
 
 
-    uVector< simpleComplex<T>, v_size>  y;
+    uVector< simpleComplex<T> > y(x.size);
 
-    for ( i=0; i < v_size; i++)
+    for ( i=0; i < x.size; i++)
     {
         y[i] = make_simpleComplex(0.0,0.0);
     }
 
-    for ( i=0; i < v_size; i++)
+    for ( i=0; i < x.size; i++)
     {
         for ( j=m.row_ptr[i] ; j < m.row_ptr[i+1] ; j++)
         {
@@ -259,8 +406,8 @@ uVector< simpleComplex<T>, v_size> mulCSRMatByuVec(const uCSRMatrix< simpleCompl
     return y;
 }
 
-template <typename T, size_t SIZE>
-void exp_of_matrix(uMatrix< simpleComplex<T>, SIZE> &x, const long int p, uMatrix< simpleComplex<T>, SIZE> &ret);
+template <typename T>
+void exp_of_matrix(uMatrix< simpleComplex<T> > &x, const long int p, uMatrix< simpleComplex<T> > &ret);
 
 template <typename T>
 struct simpleComplex<T> operator+(const struct simpleComplex<T> &a, const struct simpleComplex<T> &b);
@@ -522,12 +669,12 @@ struct simpleComplex<T> make_simpleComplex (T r, T i)
 
 /* vector operators */
 
-template <typename T, size_t SIZE>
-const uVector< struct simpleComplex<T>, SIZE > operator+(const T &a, const uVector< struct simpleComplex<T>, SIZE > &v)
+template <typename T>
+const uVector< struct simpleComplex<T> > operator+(const T &a, const uVector< struct simpleComplex<T> > &v)
 {
     unsigned int i;
 
-    uVector< struct simpleComplex<T>,SIZE > vtmp;
+    uVector< struct simpleComplex<T> > vtmp(v.size);
 
     for(i=0;i<v.size;i++)
     {
@@ -538,12 +685,12 @@ const uVector< struct simpleComplex<T>, SIZE > operator+(const T &a, const uVect
 }
 
 
-template <typename T, size_t SIZE>
-const uVector< struct simpleComplex<T>, SIZE > operator+(const uVector< struct simpleComplex<T>, SIZE > &v, const T &a)
+template <typename T>
+const uVector< struct simpleComplex<T> > operator+(const uVector< struct simpleComplex<T> > &v, const T &a)
 {
     unsigned int i;
 
-    uVector< struct simpleComplex<T>,SIZE > vtmp;
+    uVector< struct simpleComplex<T> > vtmp( v.size );
 
     for(i=0;i<v.size;i++)
     {
@@ -553,12 +700,12 @@ const uVector< struct simpleComplex<T>, SIZE > operator+(const uVector< struct s
     return vtmp;
 }
 
-template <typename T, size_t SIZE>
-const uVector< struct simpleComplex<T>, SIZE > operator-(const T &a, const uVector< struct simpleComplex<T>, SIZE > &v)
+template <typename T>
+const uVector< struct simpleComplex<T> > operator-(const T &a, const uVector< struct simpleComplex<T> > &v)
 {
     unsigned int i;
 
-    uVector< struct simpleComplex<T>,SIZE > vtmp;
+    uVector< struct simpleComplex<T> > vtmp( v.size );
 
     for(i=0;i<v.size;i++)
     {
@@ -569,12 +716,12 @@ const uVector< struct simpleComplex<T>, SIZE > operator-(const T &a, const uVect
 }
 
 
-template <typename T, size_t SIZE>
-const uVector< struct simpleComplex<T>, SIZE > operator-(const uVector< struct simpleComplex<T>, SIZE > &v, const T &a)
+template <typename T>
+const uVector< struct simpleComplex<T> > operator-(const uVector< struct simpleComplex<T> > &v, const T &a)
 {
     unsigned int i;
 
-    uVector< struct simpleComplex<T>,SIZE > vtmp;
+    uVector< struct simpleComplex<T> > vtmp( v.size );
 
     for(i=0;i<v.size;i++)
     {
@@ -585,12 +732,12 @@ const uVector< struct simpleComplex<T>, SIZE > operator-(const uVector< struct s
 }
 
 
-template <typename T, size_t SIZE>
-const uVector< struct simpleComplex<T>, SIZE > operator+(const uVector< struct simpleComplex<T>, SIZE > &v1, const uVector< struct simpleComplex<T>, SIZE > &v2)
+template <typename T>
+const uVector< struct simpleComplex<T> > operator+(const uVector< struct simpleComplex<T> > &v1, const uVector< struct simpleComplex<T> > &v2)
 {
     unsigned int i;
 
-    uVector< struct simpleComplex<T>, SIZE > vtmp;
+    uVector< struct simpleComplex<T> > vtmp(v1.size);
     for(i=0;i<v1.size;i++)
     {
         vtmp[i] = v1[i] + v2[i];
@@ -599,12 +746,12 @@ const uVector< struct simpleComplex<T>, SIZE > operator+(const uVector< struct s
     return vtmp;
 }
 
-template <typename T, size_t SIZE>
-const uVector< struct simpleComplex<T>, SIZE > operator-(const uVector< struct simpleComplex<T>, SIZE > &v1, const uVector< struct simpleComplex<T>, SIZE > &v2)
+template <typename T>
+const uVector< struct simpleComplex<T> > operator-(const uVector< struct simpleComplex<T> > &v1, const uVector< struct simpleComplex<T> > &v2)
 {
     unsigned int i;
 
-    uVector< struct simpleComplex<T>, SIZE > vtmp;
+    uVector< struct simpleComplex<T> > vtmp( v1.size );
     for(i=0;i<v1.size;i++)
     {
         vtmp[i] = v1[i] - v2[i];
@@ -614,12 +761,12 @@ const uVector< struct simpleComplex<T>, SIZE > operator-(const uVector< struct s
 }
 
 
-template <typename T, size_t SIZE>
-uVector< struct simpleComplex<T>, SIZE > operator*(const T &a, const uVector< struct simpleComplex<T>, SIZE > &v)
+template <typename T>
+uVector< struct simpleComplex<T> > operator*(const T &a, const uVector< struct simpleComplex<T> > &v)
 {
     unsigned int i;
 
-    uVector< struct simpleComplex<T>, SIZE > vtmp;
+    uVector< struct simpleComplex<T> > vtmp( v.size );
     for(i=0;i<v.size;i++)
     {
         vtmp[i] = a * v[i];
@@ -628,12 +775,44 @@ uVector< struct simpleComplex<T>, SIZE > operator*(const T &a, const uVector< st
     return vtmp;
 }
 
-template <typename T, size_t SIZE>
-uVector< struct simpleComplex<T>, SIZE > operator*(const simpleComplex<T> &a, const uVector< struct simpleComplex<T>, SIZE > &v)
+template <typename T>
+uVector< struct simpleComplex<T> > operator*(const simpleComplex<T> &a, const uVector< struct simpleComplex<T> > &v)
 {
     unsigned int i;
 
-    uVector< struct simpleComplex<T>, SIZE > vtmp;
+    uVector< struct simpleComplex<T> > vtmp( v.size );
+    
+	for(i=0;i<v.size;i++)
+    {
+        vtmp[i] = a * v[i];
+    }
+
+    return vtmp;
+}
+
+
+template <typename T>
+uVector< struct simpleComplex<T> > operator*(const uVector< struct simpleComplex<T> > &v, const T &a)
+{
+    unsigned int i;
+
+    uVector< struct simpleComplex<T> > vtmp( v.size );
+	
+    for(i=0;i<v.size;i++)
+    {
+        vtmp[i] = a * v[i];
+    }
+
+    return vtmp;
+}
+
+template <typename T>
+uVector< struct simpleComplex<T> > operator*(const uVector< struct simpleComplex<T> > &v, const struct simpleComplex<T> &a)
+{
+    unsigned int i;
+
+    uVector< struct simpleComplex<T> > vtmp( v.size );
+	
     for(i=0;i<v.size;i++)
     {
         vtmp[i] = a * v[i];
@@ -643,41 +822,13 @@ uVector< struct simpleComplex<T>, SIZE > operator*(const simpleComplex<T> &a, co
 }
 
 
-template <typename T, size_t SIZE>
-uVector< struct simpleComplex<T>, SIZE > operator*(const uVector< struct simpleComplex<T>, SIZE > &v, const T &a)
+template <typename T>
+const uVector< struct simpleComplex<T> > operator/(const uVector< struct simpleComplex<T> > &v, const T &a)
 {
-    unsigned int i;
+	unsigned  int i;
 
-    uVector< struct simpleComplex<T>, SIZE > vtmp;
-    for(i=0;i<v.size;i++)
-    {
-        vtmp[i] = a * v[i];
-    }
-
-    return vtmp;
-}
-
-template <typename T, size_t SIZE>
-uVector< struct simpleComplex<T>, SIZE > operator*(const uVector< struct simpleComplex<T>, SIZE > &v, const struct simpleComplex<T> &a)
-{
-    unsigned int i;
-
-    uVector< struct simpleComplex<T>, SIZE > vtmp;
-    for(i=0;i<v.size;i++)
-    {
-        vtmp[i] = a * v[i];
-    }
-
-    return vtmp;
-}
-
-
-template <typename T, size_t SIZE>
-const uVector< struct simpleComplex<T>, SIZE > operator/(const uVector< struct simpleComplex<T>, SIZE > &v, const T &a)
-{
-   unsigned  int i;
-
-    uVector< struct simpleComplex<T>, SIZE > vtmp;
+	uVector< struct simpleComplex<T> > vtmp( v.size );
+	
     for(i=0;i<v.size;i++)
     {
         vtmp[i] = v[i] / a;
@@ -686,12 +837,12 @@ const uVector< struct simpleComplex<T>, SIZE > operator/(const uVector< struct s
     return vtmp;
 }
 
-template <typename T, size_t SIZE>
-const uVector< struct simpleComplex<T>, SIZE > operator/(const uVector< struct simpleComplex<T>, SIZE > &v, const struct simpleComplex<T> &a)
+template <typename T>
+const uVector< struct simpleComplex<T> > operator/(const uVector< struct simpleComplex<T> > &v, const struct simpleComplex<T> &a)
 {
    unsigned  int i;
 
-    uVector< struct simpleComplex<T>, SIZE > vtmp;
+    uVector< struct simpleComplex<T> > vtmp( v.size );
     for(i=0;i<v.size;i++)
     {
         vtmp[i] = v[i] / a;
@@ -701,11 +852,11 @@ const uVector< struct simpleComplex<T>, SIZE > operator/(const uVector< struct s
 }
 
 
-template <typename T, size_t SIZE>
-struct uMatrix<T, SIZE> operator+(const struct uMatrix<T, SIZE> &m1, const struct uMatrix<T, SIZE> &m2)
+template <typename T>
+struct uMatrix<T> operator+(const struct uMatrix<T> &m1, const struct uMatrix<T> &m2)
 {
     unsigned int i, j;
-    struct uMatrix<T, SIZE> vtmp;
+    struct uMatrix<T> vtmp(m1.rows, m1.cols);
 
     for( i=0 ; i<m1.rows ; i++)
     {
@@ -718,11 +869,11 @@ struct uMatrix<T, SIZE> operator+(const struct uMatrix<T, SIZE> &m1, const struc
     return vtmp;
 }
 
-template <typename T, size_t SIZE>
-struct uMatrix<T, SIZE> operator-(const struct uMatrix<T, SIZE> &m1, const struct uMatrix<T, SIZE> &m2)
+template <typename T>
+struct uMatrix<T> operator-(const struct uMatrix<T> &m1, const struct uMatrix<T> &m2)
 {
     unsigned int i, j;
-    struct uMatrix<T, SIZE> vtmp;
+    struct uMatrix<T> vtmp(m1.rows, m1.cols);
 
     for( i=0 ; i<m1.rows ; i++)
     {
@@ -736,13 +887,13 @@ struct uMatrix<T, SIZE> operator-(const struct uMatrix<T, SIZE> &m1, const struc
 
 // scalar and matrix difference
 
-template <typename T, size_t SIZE>
-struct uMatrix<simpleComplex<T>, SIZE> operator-(const simpleComplex<T> &s, const struct uMatrix<simpleComplex<T>, SIZE> &m)
+template <typename T>
+struct uMatrix< simpleComplex<T> > operator-(const simpleComplex<T> &s, const struct uMatrix< simpleComplex<T> > &m)
 {
     unsigned int i, j;
-    struct uMatrix<simpleComplex<T>, SIZE> vtmp;
+    struct uMatrix< simpleComplex<T> > vtmp(m.rows, m.cols);
 
-    for( i=0 ; i<m.rows ; i++)
+    for( i=0 ; i < m.rows ; i++)
     {
         for( j=0; j < m.cols ; j++)
         {
@@ -753,11 +904,11 @@ struct uMatrix<simpleComplex<T>, SIZE> operator-(const simpleComplex<T> &s, cons
     return vtmp;
 }
 
-template <typename T, size_t SIZE>
-struct uMatrix<simpleComplex<T>, SIZE> operator-(const struct uMatrix<simpleComplex<T>, SIZE> &m, const simpleComplex<T> &s)
+template <typename T>
+struct uMatrix<simpleComplex<T> > operator-(const struct uMatrix<simpleComplex<T> > &m, const simpleComplex<T> &s)
 {
     unsigned int i, j;
-    struct uMatrix<simpleComplex<T>, SIZE> vtmp;
+    struct uMatrix<simpleComplex<T> > vtmp( m.rows, m.cols);
 
     for( i=0 ; i<m.rows ; i++)
     {
@@ -772,11 +923,11 @@ struct uMatrix<simpleComplex<T>, SIZE> operator-(const struct uMatrix<simpleComp
 
 // scalar and matrix mul
 
-template <typename T, size_t SIZE>
-struct uMatrix<T, SIZE> operator*(const T &s, const struct uMatrix<T, SIZE> &m)
+template <typename T>
+struct uMatrix<T> operator*(const T &s, const struct uMatrix<T> &m)
 {
     unsigned int i, j;
-    struct uMatrix<T, SIZE> vtmp;
+    struct uMatrix<T> vtmp( m.rows, m.cols);
 
     for( i=0 ; i<m.rows ; i++)
     {
@@ -789,11 +940,11 @@ struct uMatrix<T, SIZE> operator*(const T &s, const struct uMatrix<T, SIZE> &m)
     return vtmp;
 }
 
-template <typename T, size_t SIZE>
-struct uMatrix<T, SIZE> operator*(const struct uMatrix<T, SIZE> &m, const T &s)
+template <typename T>
+struct uMatrix<T> operator*(const struct uMatrix<T> &m, const T &s)
 {
     unsigned int i, j;
-    struct uMatrix<T, SIZE> vtmp;
+    struct uMatrix<T> vtmp( m.rows, m.cols );
 
     for( i=0 ; i<m.rows ; i++)
     {
@@ -807,11 +958,11 @@ struct uMatrix<T, SIZE> operator*(const struct uMatrix<T, SIZE> &m, const T &s)
 }
 
 
-template <typename T, size_t SIZE>
-struct uMatrix<T, SIZE> operator*(const simpleComplex<T> &s, const struct uMatrix<T, SIZE> &m)
+template <typename T>
+struct uMatrix<T> operator*(const simpleComplex<T> &s, const struct uMatrix<T> &m)
 {
     unsigned int i, j;
-    struct uMatrix<T, SIZE> vtmp;
+    struct uMatrix<T> vtmp(m.rows, m.cols);
 
     for( i=0 ; i<m.rows ; i++)
     {
@@ -824,11 +975,11 @@ struct uMatrix<T, SIZE> operator*(const simpleComplex<T> &s, const struct uMatri
     return vtmp;
 }
 
-template <typename T, size_t SIZE>
-struct uMatrix<T, SIZE> operator*(const struct uMatrix<T, SIZE> &m, const simpleComplex<T> &s)
+template <typename T>
+struct uMatrix<T> operator*(const struct uMatrix<T> &m, const simpleComplex<T> &s)
 {
     unsigned int i, j;
-    struct uMatrix<T, SIZE> vtmp;
+    struct uMatrix<T> vtmp(m.rows, m.cols);
 
     for( i=0 ; i<m.rows ; i++)
     {
@@ -841,11 +992,11 @@ struct uMatrix<T, SIZE> operator*(const struct uMatrix<T, SIZE> &m, const simple
     return vtmp;
 }
 
-template <typename T, size_t SIZE>
-struct uMatrix<T, SIZE> operator*(const double &s, const struct uMatrix<T, SIZE> &m)
+template <typename T>
+struct uMatrix<T> operator*(const double &s, const struct uMatrix<T> &m)
 {
     unsigned int i, j;
-    struct uMatrix<T, SIZE> vtmp;
+    struct uMatrix<T> vtmp(m.rows, m.cols);
 
     for( i=0 ; i<m.rows ; i++)
     {
@@ -858,11 +1009,11 @@ struct uMatrix<T, SIZE> operator*(const double &s, const struct uMatrix<T, SIZE>
     return vtmp;
 }
 
-template <typename T, size_t SIZE>
-struct uMatrix<T, SIZE> operator*(const struct uMatrix<T, SIZE> &m, const double &s)
+template <typename T>
+struct uMatrix<T> operator*(const struct uMatrix<T> &m, const double &s)
 {
     unsigned int i, j;
-    struct uMatrix<T, SIZE> vtmp;
+    struct uMatrix<T> vtmp(m.rows, m.cols);
 
     for( i=0 ; i<m.rows ; i++)
     {
@@ -879,20 +1030,20 @@ struct uMatrix<T, SIZE> operator*(const struct uMatrix<T, SIZE> &m, const double
 
 // matrix and matrix mul
 
-template <typename T, size_t SIZE>
-struct uMatrix<T, SIZE> operator*(const struct uMatrix<T, SIZE> &m1, const struct uMatrix<T, SIZE> &m2)
+template <typename T>
+struct uMatrix<T> operator*(const struct uMatrix<T> &m1, const struct uMatrix<T> &m2)
 {
     unsigned int i, j, k;
-    struct uMatrix<T, SIZE> vtmp;
+    struct uMatrix<T> vtmp(m1.rows, m2.cols);
     T sum;
 
     sum = make_simpleComplex(0.0, 0.0);
 
-    for (i = 0; i < SIZE; i++)
+    for (i = 0; i < m1.rows; i++)
     {
-        for (j = 0; j < SIZE; j++)
+        for (j = 0; j < m2.cols; j++)
         {
-            for (k = 0; k < SIZE; k++)
+            for (k = 0; k < m1.cols; k++)
             {
                 sum = sum + m1(i,k)*m2(k,j);
             }
@@ -904,35 +1055,35 @@ struct uMatrix<T, SIZE> operator*(const struct uMatrix<T, SIZE> &m1, const struc
     return vtmp;
 }
 
-template <typename T, size_t SIZE>
-const uVector< T, SIZE > operator*(const struct uMatrix<T, SIZE> &m, const uVector< T, SIZE > &v)
+template <typename T>
+const uVector< T > operator*(const struct uMatrix<T> &m, const uVector< T > &v)
 {
     unsigned int i, k;
-    uVector< T, SIZE > vtmp ;
+    uVector< T > vtmp( v.size ) ;
 
-    for( i=0 ; i<m.cols ; i++)
+    for( i=0 ; i< m.cols ; i++)
     {
         vtmp[i] = make_simpleComplex(0.0, 0.0);
         for( k=0; k < m.rows ; k++)
         {
             vtmp[i] = vtmp[i] + m.m[ i * m.rows + k] * v[k];
-        } // for( k=0; k < sy ; k++)
+        } // for( k=0; k < m.rows ; k++)
     } // for( i=0 ; i<m.cols ; i++)
 
     return vtmp;
 }
 
-template <typename T, size_t SIZE>
-struct simpleComplex<T> expect( size_t sx, size_t sy,  const uVector< struct simpleComplex<T>, SIZE > &m, const uVector< struct simpleComplex<T>, SIZE > &state)
+template <typename T>
+struct simpleComplex<T> expect( const unsigned int sx, const unsigned int sy, const uVector< struct simpleComplex<T> > &m, const uVector< struct simpleComplex<T> > &state)
 {
-        size_t i, j, k;
+        unsigned int i, j, k;
 
         struct simpleComplex<T> n1, n2;
 
-        uVector < struct simpleComplex<T>, SIZE*SIZE > tmp;
+        uVector < struct simpleComplex<T> > tmp( sx*sy );
 
 
-        for(k=0; k < sy ; k++)
+        for(k=0; k < sx * sy ; k++)
         {
             tmp[k] = make_simpleComplex(0.0, 0.0);
         }
@@ -966,17 +1117,17 @@ struct simpleComplex<T> expect( size_t sx, size_t sy,  const uVector< struct sim
         return n1;
 }
 
-template <typename T, size_t SIZE>
-struct simpleComplex<T> expect( size_t sx, size_t sy, uMatrix< simpleComplex<T>, SIZE > &m, const uVector< struct simpleComplex<T>, SIZE > &state)
+template <typename T>
+struct simpleComplex<T> expect( size_t sx, size_t sy, uMatrix< simpleComplex<T> > &m, const uVector< struct simpleComplex<T> > &state)
 {
         size_t i, j, k;
 
         struct simpleComplex<T> n1, n2;
 
-        uVector < struct simpleComplex<T>, SIZE*SIZE > tmp;
+        uVector < struct simpleComplex<T> > tmp( sx*sy );
 
 
-        for(k=0; k < sy ; k++)
+        for(k=0; k < sx*sy ; k++)
         {
             tmp[k] = make_simpleComplex(0.0, 0.0);
         }
@@ -1011,7 +1162,7 @@ struct simpleComplex<T> expect( size_t sx, size_t sy, uMatrix< simpleComplex<T>,
 }
 
 template <typename T, size_t SIZE1, size_t SIZE2 >
-T expect_cnv_denmat( size_t sx, size_t sy,  const uVector< T, SIZE1 > &m, const uVector< T, SIZE2 > &state)
+T expect_cnv_denmat( size_t sx, size_t sy,  const uVector< T > &m, const uVector< T > &state)
 {
         size_t i, j, k;
 
@@ -1019,8 +1170,8 @@ T expect_cnv_denmat( size_t sx, size_t sy,  const uVector< T, SIZE1 > &m, const 
 
         //const unsigned int csize = sx*sy;
 
-        uVector< T, SIZE1 > tmp ;
-        uVector< T, SIZE1 > matden ;
+        uVector< T > tmp( sx * sy ) ;
+        uVector< T > matden( sx * sy ) ;
 
 
         for(k=0; k < sx*sy ; k++)
@@ -1070,8 +1221,8 @@ T expect_cnv_denmat( size_t sx, size_t sy,  const uVector< T, SIZE1 > &m, const 
 
 }
 
-template <typename T, size_t SIZE1, size_t SIZE2 >
-T expect_cnv_denmat( size_t sx, size_t sy,  const uMatrix< T, SIZE2 > &m, const uVector< T, SIZE2 > &state)
+template <typename T>
+T expect_cnv_denmat( size_t sx, size_t sy,  const uMatrix< T > &m, const uVector< T > &state)
 {
         size_t i, j, k;
 
@@ -1079,8 +1230,8 @@ T expect_cnv_denmat( size_t sx, size_t sy,  const uMatrix< T, SIZE2 > &m, const 
 
         //const unsigned int csize = sx*sy;
 
-        uVector< T, SIZE1 > tmp ;
-        uVector< T, SIZE1 > matden ;
+        uVector< T > tmp( sx * sy) ;
+        uVector< T > matden( sx * sy ) ;
 
 
         for(k=0; k < sx*sy ; k++)
@@ -1129,8 +1280,8 @@ T expect_cnv_denmat( size_t sx, size_t sy,  const uMatrix< T, SIZE2 > &m, const 
         return n1;
 }
 
-template <typename T, size_t SIZE1, size_t SIZE2 >
-T expect_cnv_denmat_ver2( size_t sx, size_t sy,  const uVector<  T, SIZE1 > &m, const uVector< T, SIZE2 > &state)
+template <typename T>
+T expect_cnv_denmat_ver2( size_t sx, size_t sy,  const uVector< T > &m, const uVector< T > &state)
 {
         size_t i, j, k;
 
@@ -1139,9 +1290,9 @@ T expect_cnv_denmat_ver2( size_t sx, size_t sy,  const uVector<  T, SIZE1 > &m, 
         n1.re=0;
         n1.im=0;
 
-        for( k=0; k<SIZE2; k++)
+        for( k=0; k<sx; k++)
         {
-            for(i=0; i<SIZE2; i++)
+            for(i=0; i<sy; i++)
             {
                 md1 = state[k];
                 md2 = state[i];
@@ -1157,19 +1308,20 @@ T expect_cnv_denmat_ver2( size_t sx, size_t sy,  const uVector<  T, SIZE1 > &m, 
         return n1;
 }
 
-template <typename T, size_t v_size >
-simpleComplex<T> expect_cnv_csrdenmat(const uCSRMatrix< simpleComplex<T> > &m, const uVector< simpleComplex<T>, v_size > &state)
+template <typename T >
+simpleComplex<T> expect_cnv_csrdenmat(const uCSRMatrix< simpleComplex<T> > &m, const uVector< simpleComplex<T> > &state)
 {
     simpleComplex<T> r, tmp;
-    uVector< simpleComplex<T>, v_size > vtmp;
+    uVector< simpleComplex<T> > vtmp( state.size );
+	
     size_t i;
 
-    for(i=0;i<v_size;i++)
+    for(i=0;i<state.size;i++)
         vtmp[i] = make_simpleComplex( 0.0,  0.0 );
 
     vtmp = mulCSRMatByuVec(m, state);
 
-    for(i=0 ; i<v_size ; i++)
+    for(i=0 ; i<state.size ; i++)
     {
         tmp.re =  state[i].re;
         tmp.im = -state[i].im;
@@ -1183,11 +1335,12 @@ simpleComplex<T> expect_cnv_csrdenmat(const uCSRMatrix< simpleComplex<T> > &m, c
     return r;
 }
 
-template <typename T, size_t SIZE1, size_t SIZE2 >
-const uVector< struct simpleComplex<T>, SIZE2 >  mul_mat_vec ( size_t sx, size_t sy,  const uVector< struct simpleComplex<T>, SIZE1 > &m, const uVector< struct simpleComplex<T>, SIZE2 > &v)
+template <typename T>
+const uVector< struct simpleComplex<T> >  mul_mat_vec ( size_t sx, size_t sy,  const uVector< struct simpleComplex<T> > &m, const uVector< struct simpleComplex<T> > &v)
 {
     size_t i, k;
-    uVector< struct simpleComplex<T>, SIZE2> vtmp ;
+	
+    uVector< struct simpleComplex<T> > vtmp( sy ) ;
 
     for( i=0 ; i<sy ; i++)
     {
@@ -1203,8 +1356,24 @@ const uVector< struct simpleComplex<T>, SIZE2 >  mul_mat_vec ( size_t sx, size_t
 
 }
 
-template <typename T, size_t SIZE>
-T norm( const uVector< struct simpleComplex<T>, SIZE > &m )
+template <typename T>
+void  mul_mat_vec ( const uMatrix< struct simpleComplex<T> > &m, simpleComplex<T> *vin, simpleComplex<T> *vout)
+{
+    size_t i, k;
+	
+    for( i=0 ; i< m.cols ; i++)
+    {
+        vout[i] = make_simpleComplex(0.0, 0.0);
+        for( k=0; k < m.rows ; k++)
+        {
+            vout[i] = vout[i] + m.m[ i * m.rows + k] * vin[k];
+        } // for( k=0; k < m.rows ; k++)
+    } // for( i=0 ; i<m.cols ; i++)
+
+}
+
+template <typename T>
+T norm( const uVector< struct simpleComplex<T> > &m )
 {
     size_t i;
     simpleComplex<T>  tmp, cnj;
@@ -1225,8 +1394,8 @@ T norm( const uVector< struct simpleComplex<T>, SIZE > &m )
     return v;
 }
 
-template <typename T, size_t SIZE>
-T normsqrt( const uVector< struct simpleComplex<T>, SIZE > &m )
+template <typename T>
+T normsqrt( const uVector< struct simpleComplex<T> > &m )
 {
     T v = 0.0;
 
@@ -1235,8 +1404,8 @@ T normsqrt( const uVector< struct simpleComplex<T>, SIZE > &m )
     return sqrt(v);
 }
 
-template <typename T, size_t SIZE>
-struct simpleComplex<T> sum( const uVector< struct simpleComplex<T>, SIZE > &m )
+template <typename T>
+struct simpleComplex<T> sum( const uVector< struct simpleComplex<T> > &m )
 {
     size_t i;
     simpleComplex<T>  tmp;
@@ -1252,8 +1421,8 @@ struct simpleComplex<T> sum( const uVector< struct simpleComplex<T>, SIZE > &m )
     return tmp;
 }
 
-template <typename T, size_t SIZE>
-void normalize( uVector< struct simpleComplex<T>, SIZE > &m )
+template <typename T>
+void normalize( uVector< struct simpleComplex<T> > &m )
 {
 
     T v;
@@ -1263,8 +1432,8 @@ void normalize( uVector< struct simpleComplex<T>, SIZE > &m )
     return ;
 }
 
-template <typename T, size_t SIZE>
-void std_base_state( uVector< struct simpleComplex<T>, SIZE > &m, int state )
+template <typename T>
+void std_base_state( uVector< struct simpleComplex<T> > &m, int state )
 {
     size_t i;
 
@@ -1281,27 +1450,30 @@ void std_base_state( uVector< struct simpleComplex<T>, SIZE > &m, int state )
 }
 
 template <typename T, size_t SIZE1, size_t SIZE2>
-uVector< struct simpleComplex<T>, SIZE1*SIZE2 > dagnotdag( const uVector< struct simpleComplex<T>, SIZE1*SIZE2 > &m )
+uVector< struct simpleComplex<T> > dagnotdag( const uVector< struct simpleComplex<T> > &m )
 {
     size_t i;
 
-	uVector< struct simpleComplex<T>, SIZE1*SIZE2 > r;
-	uMatrix< simpleComplex<T>, SIZE1> d,nd;
+	uVector< struct simpleComplex<T> > r( SIZE1*SIZE2 );
+	uMatrix< simpleComplex<T> > d(SIZE1, SIZE2),nd(SIZE1, SIZE2);
 	
-	d.cols = SIZE1;
-	d.rows = SIZE2;
-	d.m = m;
+	//d.cols = SIZE1;
+	//d.rows = SIZE2;	
+	for(i=0;i<SIZE1*SIZE2;i++)
+		d.m[i] = m[i];
 
-	nd.cols = SIZE1;
-	nd.rows = SIZE2;
-	nd.m = m;
+	//nd.cols = SIZE1;
+	//nd.rows = SIZE2;
+	for(i=0;i<SIZE1*SIZE2;i++)
+		nd.m[i] = m[i];
 	
 	d = dagger(nd);
 	
 	d  = d * nd;
 	
-	r.size=SIZE1 * SIZE2;
-	r = d.m;
+	//r.size=SIZE1 * SIZE2;
+	for(i=0;i<SIZE1*SIZE2;i++)
+		r[i] = d.m[i];
 	
 	return r;
 }
@@ -1325,10 +1497,10 @@ void std_base_state( simpleComplex<T> *tbl, int state )
 }
 
 template <typename T, size_t SIZE>
-uVector< struct simpleComplex<T>, SIZE > coherent( struct simpleComplex<T> alpha )
+uVector< struct simpleComplex<T> > coherent( struct simpleComplex<T> alpha )
 {
-	uVector< struct simpleComplex<T>, SIZE > x;
-	uMatrix< struct simpleComplex<T>, SIZE > a, adag, tmpmat, D;
+	uVector< struct simpleComplex<T> > x(SIZE);
+	uMatrix< struct simpleComplex<T> > a(SIZE), adag(SIZE), tmpmat(SIZE), D(SIZE);
 
     size_t i;
 
@@ -1336,18 +1508,17 @@ uVector< struct simpleComplex<T>, SIZE > coherent( struct simpleComplex<T> alpha
     {
         x[i] = make_simpleComplex(0.0, 0.0);
     }
-	
+
 	std_base_state(x, 0);
-	
+
 	destroy_operator( a );
-	
 
 	adag = dagger( a );
-	
+
 	tmpmat = (alpha * adag) - (simpleComplexConj(alpha) * a);
-	
+
 	exp_of_matrix(tmpmat, 10, D);
-	
+
 	return D * x;
 }
 
@@ -1355,7 +1526,8 @@ template <typename T, size_t SIZE>
 void coherent( simpleComplex<T> *tbl, struct simpleComplex<T> alpha)
 {
 	size_t i;
-	uVector< struct simpleComplex<T>, SIZE > r;
+	
+	uVector< struct simpleComplex<T> > r( SIZE );
 	
 	r = coherent<T, SIZE>(alpha);
 	
@@ -1396,8 +1568,8 @@ inline ostream& operator<< (ostream & output, const simpleComplex<T> & c)
 //------------------------------------------------------------------------------------------------------------
 
 
-template <typename T, size_t SIZE>
-ostream& operator<< (ostream & output, const uMatrix<T, SIZE> &c)
+template <typename T>
+ostream& operator<< (ostream & output, const uMatrix<T> &c)
 {
   unsigned int i, j;
 #define width 4
@@ -1421,8 +1593,8 @@ ostream& operator<< (ostream & output, const uMatrix<T, SIZE> &c)
 //------------------------------------------------------------------------------------------------------------
 
 
-template <typename T, size_t SIZE>
-ostream& operator<< (ostream & output, const uVector<T, SIZE> &c)
+template <typename T>
+ostream& operator<< (ostream & output, const uVector<T> &c)
 {
   unsigned int i, j;
 #define width 4
@@ -1439,43 +1611,44 @@ ostream& operator<< (ostream & output, const uVector<T, SIZE> &c)
 
 
 //------------------------------------------------------------------------------------------------------------
-template <typename T, size_t SIZE>
-inline void print_matrix(const uMatrix<T, SIZE> &A, string name)
+template <typename T>
+inline void print_matrix(const uMatrix<T> &A, string name)
 {
-  cout << name << "[" << A.rows << "x" << A.cols << "=" << A.size() << "]:\n" << A << endl;
+  cout << name << "[" << A.rows << "x" << A.cols << "=" << A.size << "]:\n" << A << endl;
 }
 
-template <typename T, size_t SIZE>
-bool inverse_of_matrix(const uMatrix<T, SIZE> &M, uMatrix<T, SIZE> &A_inv)
+template <typename T>
+bool inverse_of_matrix(const uMatrix<T> &M, uMatrix<T> &A_inv)
 {
-  // check sizes
-  unsigned int size_m = M.size();
-  unsigned int size_i = A_inv.size();
-  if (size_m != size_i || M.rows != A_inv.rows || M.cols != A_inv.cols) {
-    const int width = log10(max(size_m, size_i)) + 1;
-    const int width_rows = log10(max(M.rows, A_inv.rows)) + 1;
-    const int width_cols = log10(max(M.cols, A_inv.cols)) + 1;
+	// check sizes
+	unsigned int size_m = M.size;
+	unsigned int size_i = A_inv.size;
+	if (size_m != size_i || M.rows != A_inv.rows || M.cols != A_inv.cols)
+	{
+		const int width = log10(max(size_m, size_i)) + 1;
+		const int width_rows = log10(max(M.rows, A_inv.rows)) + 1;
+		const int width_cols = log10(max(M.cols, A_inv.cols)) + 1;
 /*
     cerr << "Error: " << __FILE__ <<" (" << __LINE__ << "), "<< __FUNCTION__ << "(m1, m2):\n  "
         << "Different sizes of matrices m1 and m2.\n" << right
         << "    size(m1) = " << setw(width) << size_m << ": rows = " << setw(width_rows) <<     M.rows << ", cols = " << setw(width_cols) << M.cols << "\n"
         << "    size(m2) = " << setw(width) << size_i << ": rows = " << setw(width_rows) << A_inv.rows << ", cols = " << setw(width_cols) << A_inv.cols << endl;
 */		
-    return false;
-  }
+		return false;
+	}
 
   long int n = M.rows;       //size of the matrix M
   long int i, j, k;          //indices
 
-  uMatrix<T, SIZE> A; //create copy of matrix M as A, because matrix A change its values
+  uMatrix<T> A(M.rows, M.cols); //create copy of matrix M as A, because matrix A change its values
 
-  for(i=0;i<M.size();i++)
+  for(i=0;i<M.size;i++)
     A.m[i]=M.m[i];
 
-  uMatrix<T, SIZE> L, U;          // matrices
-  uMatrix<T, SIZE> b, d, x;  // vectors as matrices with one column size (n,1)
+  uMatrix<T> L(M.rows, M.cols), U(M.rows, M.cols);          // matrices
+  uMatrix<T> b(M.rows, M.cols), d(M.rows, M.cols), x(M.rows, M.cols);  // vectors as matrices with one column size (n,1)
 
-  for(i=0;i<b.size();i++)
+  for(i=0;i<b.size;i++)
   {
     b.m[i] = make_simpleComplex(0.0, 0.0);
     d.m[i] = make_simpleComplex(0.0, 0.0);
@@ -1544,18 +1717,18 @@ bool inverse_of_matrix(const uMatrix<T, SIZE> &M, uMatrix<T, SIZE> &A_inv)
   return true;
 }
 
-template <typename T, int SIZE>
-void matprod(uMatrix<T, SIZE> &A, uMatrix<T, SIZE> &B, uMatrix<T, SIZE> &C);
+template <typename T>
+void matprod(uMatrix<T> &A, uMatrix<T> &B, uMatrix<T> &C);
 
-template <typename T, int SIZE>	
-void matcopy(uMatrix<T, SIZE> &A, uMatrix<T, SIZE> &B);
+template <typename T>	
+void matcopy(uMatrix<T> &A, uMatrix<T> &B);
 
-template <typename T, int SIZE>
-static void matexp_pade(const long int p, uMatrix< simpleComplex<T>, SIZE> &A, uMatrix< simpleComplex<T>, SIZE> &N);
+template <typename T>
+static void matexp_pade(const long int p, uMatrix< simpleComplex<T> > &A, uMatrix< simpleComplex<T> > &N);
 
 
-template <typename T, size_t SIZE>
-void eye_of_matrix(uMatrix<T, SIZE> &m)
+template <typename T>
+void eye_of_matrix(uMatrix<T> &m)
 {
     size_t i, j;
     for( i=0 ; i < m.rows ; i++)
@@ -1571,47 +1744,47 @@ void eye_of_matrix(uMatrix<T, SIZE> &m)
     }
 }
 
-template <typename T, size_t SIZE>
-void zero_matrix( uMatrix< T, SIZE > &m )
+template <typename T>
+void zero_matrix( uMatrix< T > &m )
 {
     size_t i;
 
-    for(i=0; i<m.size(); i++)
+    for(i=0; i<m.size; i++)
     {
        m.m[i] = make_simpleComplex(0.0, 0.0);
     }
 }
 
-template <typename T, size_t SIZE>
-void pauli_x_matrix( uMatrix< T, SIZE > &m )
+template <typename T>
+void pauli_x_matrix( uMatrix<T> &m )
 {
     m.m[0] = make_simpleComplex(0.0, 0.0); m.m[1] = make_simpleComplex(1.0, 0.0);
     m.m[2] = make_simpleComplex(1.0, 0.0); m.m[3] = make_simpleComplex(0.0, 0.0);	
 }
 
-template <typename T, size_t SIZE>
-void pauli_x_matrix( uVector< T, SIZE > &v)
+template <typename T>
+void pauli_x_matrix( uVector<T> &v)
 {
     v[0] = make_simpleComplex(0.0, 0.0); v[1] = make_simpleComplex(1.0, 0.0);
     v[2] = make_simpleComplex(1.0, 0.0); v[3] = make_simpleComplex(0.0, 0.0);	
 }
 
-template <typename T, size_t SIZE>
-void pauli_y_matrix( uVector< T, SIZE > &v)
+template <typename T>
+void pauli_y_matrix( uVector<T> &v)
 {
     v[0] = make_simpleComplex(0.0, 0.0); v[1] = make_simpleComplex(0.0,-1.0);
     v[2] = make_simpleComplex(0.0, 1.0); v[3] = make_simpleComplex(0.0, 0.0);	
 }
 
-template <typename T, size_t SIZE>
-void pauli_z_matrix( uVector< T, SIZE > &v)
+template <typename T>
+void pauli_z_matrix( uVector<T> &v)
 {
     v[0] = make_simpleComplex(1.0, 0.0); v[1] = make_simpleComplex( 0.0, 0.0);
     v[2] = make_simpleComplex(0.0, 0.0); v[3] = make_simpleComplex(-1.0, 0.0);	
 }
 
-template <typename T, size_t SIZE>
-void transpose_of_matrix( uMatrix< T, SIZE > &m )
+template <typename T>
+void transpose_of_matrix( uMatrix<T> &m )
 {
     T a, b;
     size_t i,j;
@@ -1635,10 +1808,10 @@ void transpose_of_matrix( uMatrix< T, SIZE > &m )
     }
 }
 
-template <typename T, size_t SIZE>
-uMatrix< T, SIZE > dagger( const uMatrix< T, SIZE > &_m )
+template <typename T>
+uMatrix<T> dagger( const uMatrix<T> &_m )
 {	
-	uMatrix< T, SIZE > m;
+	uMatrix<T> m(_m.rows, _m.cols);
 	
 	m = _m;
 	
@@ -1664,26 +1837,26 @@ uMatrix< T, SIZE > dagger( const uMatrix< T, SIZE > &_m )
 }
 
 
-template <typename T, size_t SIZE>
-void destroy_operator( uMatrix< T, SIZE > &m )
+template <typename T>
+void destroy_operator( uMatrix<T> &m )
 {
 	size_t i, y;
-	
+
 	y=1;
-	for(i=0; i < SIZE - 1; i++)
+	for(i=0; i < m.rows - 1; i++)
 	{
-		m(i, y) = make_simpleComplex( sqrt((double)y), 0.0 );
+		m(i, y)= make_simpleComplex( sqrt((double)y), 0.0 );
 		y++;
 	}
 }
 
-template <typename T, size_t SIZE>
-void create_operator( uMatrix< T, SIZE > &m )
+template <typename T>
+void create_operator( uMatrix<T> &m )
 {
 	size_t i, y;
-	
+
 	y=1;
-	for(i=0; i < SIZE - 1; i++)
+	for(i=0; i < m.rows - 1; i++)
 	{
 		m(y, i) = make_simpleComplex( sqrt((double)y), 0.0 );
 		y++;
@@ -1691,29 +1864,29 @@ void create_operator( uMatrix< T, SIZE > &m )
 }
 
 
-template <typename T, size_t SIZE>
-void make_x_operator( uMatrix< T, SIZE > &m )
+template <typename T>
+void make_x_operator( uMatrix<T> &m )
 {
 	size_t i, y;
 	
-	y=SIZE - 1;
-	for(i=0; i < SIZE ; i++)
+	y=m.cols - 1;
+	for(i=0; i < m.rows ; i++)
 	{
 		m(i, y) = make_simpleComplex( 1.0, 0.0 );
 		y--;
 	}
 }
 
-template <typename T, size_t SIZE>
-void sigma_m_matrix( uMatrix< T, SIZE > &v)
+template <typename T>
+void sigma_m_matrix( uMatrix<T> &v)
 {
     v(0,0) = make_simpleComplex(0.0, 0.0); v(0,1) = make_simpleComplex(0.0, 0.0);
     v(1,0) = make_simpleComplex(1.0, 0.0); v(1,1) = make_simpleComplex(0.0, 0.0);	
 }
 
 
-template <typename T, size_t SIZE>
-T norminf(const uMatrix<T, SIZE> &m)
+template <typename T>
+T norminf(const uMatrix<T> &m)
 {
     size_t i,j;
 
@@ -1734,8 +1907,8 @@ T norminf(const uMatrix<T, SIZE> &m)
 
 }
 
-template <typename T, size_t SIZE>
-T norminf( const uVector< T, SIZE > &v)
+template <typename T>
+T norminf( const uVector<T> &v)
 {
     size_t i;
 
@@ -1755,8 +1928,8 @@ T norminf( const uVector< T, SIZE > &v)
 
 }
 
-template <typename T, size_t SIZE>
-void zero_vector( uVector< struct simpleComplex<T>, SIZE > &v)
+template <typename T>
+void zero_vector( uVector<T> &v)
 {
     size_t i;
 
@@ -1766,11 +1939,11 @@ void zero_vector( uVector< struct simpleComplex<T>, SIZE > &v)
     }
 }
 
-template <typename T, size_t SIZE1, size_t SIZE2>
-uMatrix<simpleComplex<T>, SIZE1*SIZE2>  tensor(uMatrix<simpleComplex<T>, SIZE1> &m1, uMatrix<simpleComplex<T>, SIZE2> &m2)
+template <typename T>
+uMatrix<simpleComplex<T> > tensor(uMatrix<simpleComplex<T> > &m1, uMatrix<simpleComplex<T> > &m2)
 {
 	int x,y,i,j,ii,jj;
-	uMatrix< simpleComplex<T>, SIZE1*SIZE2>  tmp;
+	uMatrix< simpleComplex<T> >  tmp(m1.rows * m2.rows, m1.cols * m2.cols);
     simpleComplex<T> num;
 
 	for(i=0;i<tmp.rows;i++)
@@ -1809,6 +1982,18 @@ uMatrix<simpleComplex<T>, SIZE1*SIZE2>  tensor(uMatrix<simpleComplex<T>, SIZE1> 
          }
      }
 	return tmp;
+}
+
+template <typename T>
+uMatrix< simpleComplex<T> > tensor(uMatrix< simpleComplex<T> > &m1, uMatrix< simpleComplex<T> > &m2, uMatrix< simpleComplex<T> > &m3)
+{
+	uMatrix< simpleComplex<T> > tmp1(m1.rows * m2.rows, m1.cols * m2.cols);
+	uMatrix< simpleComplex<T> > tmp2(m1.rows * m2.rows * m3.rows, m1.cols * m2.cols * m3.cols);
+	
+	tmp1=tensor<T>(m1, m2);
+	tmp2=tensor<T>(tmp1, m3);
+	
+	return tmp2;
 }
 
 template <typename T, size_t SIZE1, size_t SIZE2>

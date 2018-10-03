@@ -1,5 +1,3 @@
-#include <cmath>
-
 /***************************************************************************
  *   Copyright (C) 2017 -- 2018 by Marek Sawerwain                         *
  *                                         <M.Sawerwain@gmail.com>         *
@@ -25,6 +23,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+#include <cmath>
 #include "complexnum.h"
 
 /* 
@@ -55,10 +54,10 @@ extern "C" int zgemm_( 	char * 	TRANSA,
 	dblcmplx *  	C,
 	long int *  	LDC );
 		
-template <typename T, int SIZE>
-void matprod( uMatrix<simpleComplex<T>, SIZE> &A, uMatrix<simpleComplex<T>, SIZE> &B, uMatrix<simpleComplex<T>, SIZE> &C)
+template <typename T>
+void matprod( uMatrix<simpleComplex<T> > &A, uMatrix<simpleComplex<T> > &B, uMatrix<simpleComplex<T> > &C)
 {
-	long int n = SIZE;
+	long int n = A.rows;
 	
     dblcmplx one = make_simpleComplex(1.0, 0.0);
 	dblcmplx zero = make_simpleComplex(0.0, 0.0);
@@ -77,10 +76,10 @@ extern "C" int zlacpy_ ( 	char *  	UPLO,
 	long int *  	LDB ); 	
 
 	
-template <typename T, int SIZE>	
-void matcopy(uMatrix<simpleComplex<T>, SIZE> &A, uMatrix<simpleComplex<T>, SIZE> &B)
+template <typename T>	
+void matcopy(uMatrix< simpleComplex<T> > &A, uMatrix< simpleComplex<T> > &B)
 {
-	long int n = SIZE;
+	long int n = A.rows;
 	
 	char uplo = 'A';
 
@@ -89,15 +88,15 @@ void matcopy(uMatrix<simpleComplex<T>, SIZE> &A, uMatrix<simpleComplex<T>, SIZE>
 
 
 
-template <typename T, int SIZE>	
-T matnorm_1(uMatrix<simpleComplex<T>, SIZE> &m)
+template <typename T>	
+T matnorm_1(uMatrix<simpleComplex<T> > &m)
 {
 	T norm = 0.0;
-	for (int j=0; j<SIZE; j++)
+	for (int j=0; j<m.rows; j++)
 	{
 		T tmp = 0;
-		for (int i=0; i<SIZE; i++)
-			tmp += simpleComplexAbs(m.m[i + j*SIZE]);
+		for (int i=0; i<m.cols; i++)
+			tmp += simpleComplexAbs(m.m[i + j*m.rows]);
 		if (tmp > norm)
 			norm = tmp;
 	}
@@ -106,12 +105,12 @@ T matnorm_1(uMatrix<simpleComplex<T>, SIZE> &m)
 
 
 
-template <typename T, int SIZE>	
-long int matexp_scale_factor(uMatrix< simpleComplex<T>, SIZE> &m)
+template <typename T>	
+long int matexp_scale_factor(uMatrix< simpleComplex<T> > &m)
 {
 	const long int NTHETA = 5;
     const T theta[] = {1.5e-2, 2.5e-1, 9.5e-1, 2.1e0, 5.4e0};
-    const T x_1 = matnorm_1<T,SIZE>(m);
+    const T x_1 = matnorm_1<T>(m);
 
     for (int i=0; i < NTHETA; i++) {
 		if (x_1 <= theta[i])
@@ -122,11 +121,11 @@ long int matexp_scale_factor(uMatrix< simpleComplex<T>, SIZE> &m)
     return 1 << i;
 }
 
-template <typename T, int SIZE>	
-static void matpow_by_squaring(uMatrix< simpleComplex<T>, SIZE> &A, long int b, uMatrix< simpleComplex<T>, SIZE> &P)
+template <typename T>	
+static void matpow_by_squaring( uMatrix< simpleComplex<T> > &A, long int b, uMatrix< simpleComplex<T> > &P)
 {
 	if (b == 1) {
-		matcopy<T, SIZE>(A, P);
+		matcopy<T>(A, P);
 		return;
 	}
     
@@ -135,20 +134,20 @@ static void matpow_by_squaring(uMatrix< simpleComplex<T>, SIZE> &A, long int b, 
     if (b == 0)
 		return;
 
-	uMatrix< simpleComplex<T>, SIZE> TMP;
+	uMatrix< simpleComplex<T> > TMP(A.rows, A.cols);
 	
 	zero_matrix( TMP );
 	
     while (b) {
 		if (b&1) { // P := P A
-			matprod<T,SIZE>(P, A, TMP);
-			matcopy<T,SIZE>(TMP, P);
+			matprod<T>(P, A, TMP);
+			matcopy<T>(TMP, P);
 		}
 
 		b >>= 1;
 
-		matprod<T,SIZE>(A, A, TMP);
-		matcopy<T,SIZE>(TMP, A);
+		matprod<T>(A, A, TMP);
+		matcopy<T>(TMP, A);
     }
 }
 
@@ -172,17 +171,17 @@ const double matexp_pade_coefs[14] =
 
 #define SGNEXP(x,pow) (x==0?(pow==0?1:0):(x>0?1:(pow%2==0?1:(-1))))
 
-template <typename T, int SIZE>	
+template <typename T>	
 void matexp_pade_fillmats(const long int i,
-			  uMatrix< simpleComplex<T>, SIZE> &N, 
-			  uMatrix< simpleComplex<T>, SIZE> &D,
-			  uMatrix< simpleComplex<T>, SIZE> &B, 
-			  uMatrix< simpleComplex<T>, SIZE> &C)
+			  uMatrix< simpleComplex<T> > &N, 
+			  uMatrix< simpleComplex<T> > &D,
+			  uMatrix< simpleComplex<T> > &B, 
+			  uMatrix< simpleComplex<T> > &C)
 {
   const double tmp = matexp_pade_coefs[i];
   const long int sgn = SGNEXP(-1, i);
 
-    for (int j=0; j < SIZE*SIZE; j++)
+    for (int j=0; j < N.rows*N.cols; j++)
 	{
 		simpleComplex<T> t_j = C.m[j];
 		B.m[j] = t_j;
@@ -203,24 +202,25 @@ extern "C" int zgesv_ 	( 	long int *  	N,
 		long int *  	LDB,
 		long int *  	INFO 	);
 
-template <typename T, int SIZE>
-static void matexp_pade(const long int p, uMatrix< simpleComplex<T>, SIZE> &A, uMatrix< simpleComplex<T>, SIZE> &N)
+template <typename T>
+static void matexp_pade(const long int p, uMatrix< simpleComplex<T> > &A, uMatrix< simpleComplex<T> > &N)
 {
-	long int n = SIZE;
+	long int n = A.rows;
+	long int ipiv[A.rows];
 	
     long int i, info = 0;
 
-	uMatrix< simpleComplex<T>, SIZE> B;
+	uMatrix< simpleComplex<T> > B(A.rows, A.cols);
 	zero_matrix(B);
 
-	uMatrix< simpleComplex<T>, SIZE> C;
+	uMatrix< simpleComplex<T> > C(A.rows, A.cols);
 	zero_matrix(C);
-	matcopy<T, SIZE>(A, C);
+	matcopy<T>(A, C);
 	
-	uMatrix< simpleComplex<T>, SIZE> D;
+	uMatrix< simpleComplex<T> > D(A.rows, A.cols);
 	zero_matrix(D);
 
-    for (i=0; i<SIZE*SIZE; i++)
+    for (i=0; i<N.size; i++)
 	{
 		N.m[i].re = 0.0;
 		N.m[i].im = 0.0;
@@ -229,7 +229,7 @@ static void matexp_pade(const long int p, uMatrix< simpleComplex<T>, SIZE> &A, u
     }
 
     i = 0;
-    while (i < (SIZE*SIZE) )
+    while (i < (N.size) )
 	{
 		N.m[i].re = 1.0;
 		N.m[i].im = 0.0;
@@ -242,12 +242,11 @@ static void matexp_pade(const long int p, uMatrix< simpleComplex<T>, SIZE> &A, u
     for (i=1; i<=p; i++)
     {
 		if (i > 1)
-			matprod<T, SIZE>(A, B, C);
+			matprod<T>(A, B, C);
 
-		matexp_pade_fillmats<T, SIZE>(i, N, D, B, C);
+		matexp_pade_fillmats<T>(i, N, D, B, C);
     }
 
-	long int ipiv[SIZE];
 	
 
     zgesv_(&n, &n, &D.m[0], &n, &ipiv[0], &N.m[0], &n, &info);
@@ -259,14 +258,14 @@ extern "C" int zscal_	( 	long int *	 	N,
 		dblcmplx *  	ZX,
 		long int *  	INCX 	);
 
-template <typename T, size_t SIZE>
-void exp_of_matrix(uMatrix< simpleComplex<T>, SIZE> &x, const long int p, uMatrix< simpleComplex<T>, SIZE> &ret)
+template <typename T>
+void exp_of_matrix(uMatrix< simpleComplex<T> > &x, const long int p, uMatrix< simpleComplex<T> > &ret)
 {	
-	long int n = SIZE; 
-	long int m = matexp_scale_factor<T, SIZE>(x);
+	long int n = x.rows; 
+	long int m = matexp_scale_factor<T>(x);
 	
 	if (m == 0) {
-		matexp_pade<T, SIZE>(p, x, ret);
+		matexp_pade<T>(p, x, ret);
 		return;
 	}
 
@@ -277,9 +276,9 @@ void exp_of_matrix(uMatrix< simpleComplex<T>, SIZE> &x, const long int p, uMatri
 
 	zscal_(&nn, &tmp, &x.m[0], &one);
 
-	matexp_pade<T, SIZE>(p, x, ret);
+	matexp_pade<T>(p, x, ret);
 
-	matcopy<T, SIZE>(ret, x);
+	matcopy<T>(ret, x);
 
-	matpow_by_squaring<T, SIZE>(x, m, ret);
+	matpow_by_squaring<T>(x, m, ret);
 }

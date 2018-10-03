@@ -44,8 +44,6 @@
 #define TRJ_BAD 66
 #define TRJ_UNKNOWN 85
  
-typedef simpleComplex<double> dblcmplx;
-
 
 typedef struct {
 	int type_output;

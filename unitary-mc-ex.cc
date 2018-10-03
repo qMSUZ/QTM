@@ -37,10 +37,10 @@ const size_t N = 100;
 const size_t WAVEVECTOR_LEAD_DIM = 2;
 const size_t WAVEVECTOR_LEAD_DIM_SQR = 4;
 
-uMatrix< simpleComplex<double>, WAVEVECTOR_LEAD_DIM > c_ops[ COLLAPSE_OPERATORS ];
-uVector< simpleComplex<double>, WAVEVECTOR_LEAD_DIM_SQR > collapse_operator;
-uVector< simpleComplex<double>, WAVEVECTOR_LEAD_DIM_SQR > expect_operator;
-uVector< simpleComplex<double>, WAVEVECTOR_LEAD_DIM_SQR > H;
+uMatrix< simpleComplex<double> > c_ops[ COLLAPSE_OPERATORS ]= { {WAVEVECTOR_LEAD_DIM} };
+uVector< simpleComplex<double> > collapse_operator( WAVEVECTOR_LEAD_DIM_SQR );
+uVector< simpleComplex<double> > expect_operator( WAVEVECTOR_LEAD_DIM_SQR );
+uVector< simpleComplex<double> > H( WAVEVECTOR_LEAD_DIM_SQR );;
 simpleComplex<double> alpha[WAVEVECTOR_LEAD_DIM];
 
 #include "qtm.cc"
@@ -102,9 +102,10 @@ int main(int argc, char *argv[])
 	m.im=-1.0;
 	H = H * m;
 	
-	c_ops[0].rows=2;
-	c_ops[0].cols=2;
-	c_ops[0].m = collapse_operator;
+	//c_ops[0].rows=2;
+	//c_ops[0].cols=2;
+	//c_ops[0].m = collapse_operator;
+	c_ops[0].recreate(2, 2, collapse_operator);
 	
 	opt.type_output = OUTPUT_FILE_PYTHON_STYLE;
 	//opt.type_output = OUTPUT_FILE;

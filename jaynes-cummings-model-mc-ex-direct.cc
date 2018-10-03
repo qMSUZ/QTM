@@ -36,8 +36,8 @@ const size_t N = 600;
 const size_t WAVEVECTOR_LEAD_DIM = 80;
 const size_t WAVEVECTOR_LEAD_DIM_SQR = 80*80;
 
-uMatrix< simpleComplex<double>, WAVEVECTOR_LEAD_DIM > c_ops[ 1 ];
-uVector< simpleComplex<double>, WAVEVECTOR_LEAD_DIM_SQR > collapse_operator;
+uMatrix< simpleComplex<double> > c_ops[ 1 ]  = { {WAVEVECTOR_LEAD_DIM} };
+uVector< simpleComplex<double> > collapse_operator;
 
 // template <typename T, size_t _S_ValueSize, size_t _S_RowPtr, size_t _S_ColInd>
 

@@ -37,8 +37,8 @@ const size_t N = 600;
 const size_t WAVEVECTOR_LEAD_DIM = 80;
 const size_t WAVEVECTOR_LEAD_DIM_SQR = WAVEVECTOR_LEAD_DIM*WAVEVECTOR_LEAD_DIM;
 
-uMatrix< simpleComplex<double>, WAVEVECTOR_LEAD_DIM > c_ops[ 1 ];
-uVector< simpleComplex<double>, 1 > collapse_operator;
+uMatrix< simpleComplex<double> > c_ops[ 1 ]  = { {WAVEVECTOR_LEAD_DIM} };
+uVector< simpleComplex<double> > collapse_operator;
 
 uCSRMatrix< simpleComplex<double> > expect_operator;
 uCSRMatrix< simpleComplex<double> > H;
@@ -80,10 +80,10 @@ int prepare_matrices()
 	int i;
 	simpleComplex<double> m, mhalf, alphaval;
 
-	uMatrix< simpleComplex<double>, WAVEVECTOR_LEAD_DIM > a, sigmaminus, Hsys, eops;
+	uMatrix< simpleComplex<double> > a(WAVEVECTOR_LEAD_DIM), sigmaminus(WAVEVECTOR_LEAD_DIM), Hsys(WAVEVECTOR_LEAD_DIM), eops(WAVEVECTOR_LEAD_DIM);
 	
-	uMatrix< simpleComplex<double>, WAVEVECTOR_LEAD_DIM/2 > d, big_id;
-	uMatrix< simpleComplex<double>, 2 > small_id, sigmam;
+	uMatrix< simpleComplex<double> > d(WAVEVECTOR_LEAD_DIM/2), big_id(WAVEVECTOR_LEAD_DIM/2);
+	uMatrix< simpleComplex<double> > small_id(2), sigmam(2);
 	
 	simpleComplex<double> c[WAVEVECTOR_LEAD_DIM/2];
 	simpleComplex<double> b[2];

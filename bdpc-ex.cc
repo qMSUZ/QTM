@@ -37,10 +37,10 @@ const size_t N = 100;
 const size_t WAVEVECTOR_LEAD_DIM = 5;
 const size_t WAVEVECTOR_LEAD_DIM_SQR = 25;
 
-uMatrix< simpleComplex<double>, WAVEVECTOR_LEAD_DIM > c_ops[ COLLAPSE_OPERATORS ];
-uVector< simpleComplex<double>, WAVEVECTOR_LEAD_DIM_SQR > co0, co1;
-uVector< simpleComplex<double>, WAVEVECTOR_LEAD_DIM_SQR > expect_operator;
-uVector< simpleComplex<double>, WAVEVECTOR_LEAD_DIM_SQR > H;
+uMatrix< simpleComplex<double> > c_ops[ COLLAPSE_OPERATORS ] = { {WAVEVECTOR_LEAD_DIM}, {WAVEVECTOR_LEAD_DIM} };
+//uVector< simpleComplex<double> > co0(WAVEVECTOR_LEAD_DIM_SQR), co1(WAVEVECTOR_LEAD_DIM_SQR);
+uVector< simpleComplex<double> > expect_operator(WAVEVECTOR_LEAD_DIM_SQR);
+uVector< simpleComplex<double> > H(WAVEVECTOR_LEAD_DIM_SQR);
 simpleComplex<double> alpha[WAVEVECTOR_LEAD_DIM];
 
 #include "qtm.cc"
@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
 	double kappa = 1.0/0.129;
 	double nth = 0.063;
 
-	uMatrix< simpleComplex<double>, WAVEVECTOR_LEAD_DIM >	amat, hmat, c0, c1, emat;
+	uMatrix< simpleComplex<double> > amat(WAVEVECTOR_LEAD_DIM), hmat(WAVEVECTOR_LEAD_DIM), c0(WAVEVECTOR_LEAD_DIM), c1(WAVEVECTOR_LEAD_DIM), emat(WAVEVECTOR_LEAD_DIM);
 
 	zero_matrix(amat);
 	zero_matrix(hmat);
@@ -108,28 +108,30 @@ int main(int argc, char *argv[])
 	m.im=-1.0;
 	hmat = hmat * m;
 
-	zero_vector(co0);
-	zero_vector(co1);
+	//zero_vector(co0);
+	//zero_vector(co1);
 
-	co0 = c0.m;
-	co1 = c1.m;
+	//co0 = c0.m;
+	//co1 = c1.m;
 	
 	zero_vector( expect_operator );
 
-	expect_operator = emat.m;
+	expect_operator = uMatrix_to_uVector(emat);
 	
 	zero_vector( H );
 	
-	H=hmat.m;
+	H=uMatrix_to_uVector(hmat);
 
-	c_ops[0].rows=5;
-	c_ops[0].cols=5;
-	c_ops[0].m = co0;
+	//c_ops[0].rows=5;
+	//c_ops[0].cols=5;
+	//c_ops[0].m = co0;
+	c_ops[0] = c0;
 
-	c_ops[1].rows=5;
-	c_ops[1].cols=5;
-	c_ops[1].m = co1;
-
+	//c_ops[1].rows=5;
+	//c_ops[1].cols=5;
+	//c_ops[1].m = co1;
+	c_ops[1] = c1;
+	
 	//opt.type_output = OUTPUT_FILE;
 	opt.type_output = OUTPUT_FILE_PYTHON_STYLE;
 	opt.state_of_trj_output = 0;

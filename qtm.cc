@@ -222,7 +222,7 @@ int rng_test_1(int host_rank, extra_options &opt)
 template <typename TYPE, size_t SIZE, size_t AlphaSize>
 int zvode_method_for_mc(TYPE h, TYPE &_Tout_par, int steps,
                simpleComplex<TYPE> &_T_par,
-               uVector< simpleComplex<TYPE>, SIZE > &_Y_par,
+               uVector< simpleComplex<TYPE> > &_Y_par,
                int (*fnc)(long int *NEQ, TYPE *T, dblcmplx *Y, dblcmplx *YDOT, dblcmplx *RPAR, long int *IPAR) )
 {
 	//int i = 0;
@@ -289,7 +289,7 @@ int process_trajectories(double _from_time, double _to_time,
         ode_norm_tol = 1e-7, sump = 0.0 ;
 
 		
-    uVector< simpleComplex<double>, N > tlist;
+    uVector< simpleComplex<double> > tlist(N);
 
     //struct uMatrix<simpleComplex<double>, Ntrj> pt_trjs;
 	simpleComplex<double> **pt_trjs;
@@ -338,7 +338,7 @@ int process_trajectories(double _from_time, double _to_time,
 	}
 
 
-    uVector< simpleComplex<double>, _C_OPS_SIZE > P;
+    uVector< simpleComplex<double> > P(_C_OPS_SIZE);
 
     simpleComplex<double> T ;
     simpleComplex<double> T_prev ;
@@ -346,10 +346,10 @@ int process_trajectories(double _from_time, double _to_time,
     simpleComplex<double> T_guess ;
 
 
-    uVector< simpleComplex<double>, _WV_LEAD_DIM > Y;
-    uVector< simpleComplex<double>, _WV_LEAD_DIM > Y_prev ;
-    uVector< simpleComplex<double>, _WV_LEAD_DIM > Y_tmp;
-    uVector< simpleComplex<double>, _WV_LEAD_DIM > out_psi;
+    uVector< simpleComplex<double> > Y(_WV_LEAD_DIM);
+    uVector< simpleComplex<double> > Y_prev(_WV_LEAD_DIM);
+    uVector< simpleComplex<double> > Y_tmp(_WV_LEAD_DIM);
+    uVector< simpleComplex<double> > out_psi(_WV_LEAD_DIM);
 	
 	//uVector< simpleComplex<double>, _WV_LEAD_DIM_SQR> id_operator;
 
@@ -677,29 +677,29 @@ int process_trajectories(double _from_time, double _to_time,
 								sump = sump + P[j].re ;
 							} // for ( j=0 ; j < _C_OPS_SIZE; j++ )
 						} // if(_C_OPS_SIZE>0)
-                        
+						
 						// new random numbers
-                        mu = lfsr113_genRand_asDouble();
-                        nu = lfsr113_genRand_asDouble();
+						mu = lfsr113_genRand_asDouble();
+						nu = lfsr113_genRand_asDouble();
 						if(opt.verbose_mode >= 1)
 						{
 							printf ("process_trajectories: Node [%d] Proc.Name [%s]: trj %d:  new mu=%f nu=%f.\n", host_rank, processor_name, trj, mu, nu);
 							fflush(stdout);
 						}
-                        normalize(Y);
+						normalize(Y);
 
-                     // reset, first call to zvode
-                     //itask = 1 ;
+					// reset, first call to zvode
+					// itask = 1 ;
 
-                    } // if(norm2_psi <= mu )
+					} // if(norm2_psi <= mu )
 
 
-                } // while(T.re < tlist[k].re)
+				} // while(T.re < tlist[k].re)
 
 				Y_tmp = Y;
 				//normalize(Y_tmp);
 
-                out_psi = Y_tmp / normsqrt(Y_tmp);
+				out_psi = Y_tmp / normsqrt(Y_tmp);
 				ev.re=0; ev.im=0;
 #ifdef __USE_DENSE_EXPECT_OPERATORS
 				if(use_expecation_operator == 0)
@@ -711,7 +711,7 @@ int process_trajectories(double _from_time, double _to_time,
 				{
 					ev = expect_cnv_denmat< simpleComplex<double>, _WV_LEAD_DIM_SQR, _WV_LEAD_DIM>(_WV_LEAD_DIM, _WV_LEAD_DIM, expect_operator, out_psi);
 				}
-#endif				
+#endif
 #ifdef __USE_SPARSE_CSR_EXPECT_OPERATORS
 				if(use_expecation_operator == 2)
 				{
@@ -888,7 +888,7 @@ int mpi_main(int argc, char *argv[],
 	
 	simpleComplex<double> **glb_trjs;
 	
-	uVector< simpleComplex<double>, N > final_avg_trj;
+	uVector< simpleComplex<double> > final_avg_trj( N );
 
 
 	MPI_Init( &argc, &argv );

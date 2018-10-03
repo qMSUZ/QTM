@@ -47,6 +47,7 @@ OUTPUTNAME_JCM = jcm-ex.exe
 UNITARY_MAIN_SRC = unitary-mc-ex.cc rgen_lfsr113.cc
 UNITARY_MAIN_SRC_DIRECT = unitary-mc-ex-direct.cc rgen_lfsr113.cc
 TRIHAM_OBJ_SRC = triham-mc-ex.cc rgen_lfsr113.cc
+TRIHAM_OBJ_SRC_DIRECT = triham-mc-ex-direct.cc rgen_lfsr113.cc
 BDPC_OBJ_SRC = bdpc-ex.cc rgen_lfsr113.cc
 BDPC_MAIN_SRC_DIRECT = bdpc-ex-direct.cc rgen_lfsr113.cc
 JCM-MC-EX_SRC = jaynes-cummings-model-mc-ex.cc rgen_lfsr113.cc
@@ -70,6 +71,10 @@ unitary-ex-direct: $(UNITARY_MAIN_SRC_DIRECT) $(QTM_OBJ_ZVODE_SRC)
 		
 triham-ex: $(TRIHAM_OBJ_SRC) $(QTM_OBJ_ZVODE_SRC)
 		$(CC) $(TRIHAM_OBJ_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_TRIHAM) -lblas -llapack -lgfortran $(LIBRARY)
+		
+triham-ex-direct: $(TRIHAM_OBJ_SRC_DIRECT) $(QTM_OBJ_ZVODE_SRC)
+		$(CC) $(TRIHAM_OBJ_SRC_DIRECT) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_TRIHAM) -lblas -llapack -lgfortran $(LIBRARY)
+
 		
 bdpc-ex: $(BDPC_OBJ_SRC) $(QTM_OBJ_ZVODE_SRC)
 		$(CC) $(BDPC_OBJ_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_BDPC) -lblas -llapack -lgfortran $(LIBRARY)
