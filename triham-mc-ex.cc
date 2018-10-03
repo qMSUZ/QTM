@@ -61,17 +61,6 @@ uCSRMatrix< simpleComplex<double> > expect_operator2;
 
 uCSRMatrix< simpleComplex<double> > H;
 
-
-//uCSRMatrix< simpleComplex<double> > co0(448, 513, 448);
-//uCSRMatrix< simpleComplex<double> > co1(448, 513, 448);
-//uCSRMatrix< simpleComplex<double> > co2(448, 513, 448);
-
-//uCSRMatrix< simpleComplex<double> > expect_operator(448, 513, 448);
-//uCSRMatrix< simpleComplex<double> > expect_operator1(448, 513, 448);
-//uCSRMatrix< simpleComplex<double> > expect_operator2(448, 513, 448);
-
-//uCSRMatrix< simpleComplex<double> > H(1197, 513, 1197);
-
 simpleComplex<double> alpha[WAVEVECTOR_LEAD_DIM];
 
 #include "qtm.cc"
@@ -182,19 +171,10 @@ int prepare_matrices()
 	co1 = uMatrix_to_uCSRMatrix(C1);	
 	co2 = uMatrix_to_uCSRMatrix(C2);	
 
-	//dump_uCSRMatrix_to_file<double>(co0, "co0", "dump-triham-co0.txt");
-	//dump_uCSRMatrix_to_file<double>(co1, "co1", "dump-triham-co1.txt");
-	//dump_uCSRMatrix_to_file<double>(co2, "co2", "dump-triham-co2.txt");
-
 	expect_operator  = uMatrix_to_uCSRMatrix( num0 );
 	expect_operator1 = uMatrix_to_uCSRMatrix( num1 );
 	expect_operator2 = uMatrix_to_uCSRMatrix( num2 );
 
-	//dump_uCSRMatrix_to_file<double>(expect_operator,  "eo0", "dump-triham-eo0.txt");
-	//dump_uCSRMatrix_to_file<double>(expect_operator1, "eo1", "dump-triham-eo1.txt");
-	//dump_uCSRMatrix_to_file<double>(expect_operator2, "eo2", "dump-triham-eo2.txt");
-	
-	
 	std_base_state<double, N0>(&b0[0], 0);
 	std_base_state<double, N1>(&b1[0], 0);
 	std_base_state<double, N2>(&b2[0], 0);
@@ -205,24 +185,9 @@ int prepare_matrices()
 	Dtmp = alphaval * dagger(a0) - alphaval*a0;
 	exp_of_matrix(Dtmp, 10, D);
 	
-	/*
-	vacuum=tensor(basis(N0,0),basis(N1,0),basis(N2,0))
-	D=(alpha*a0.dag()-np.conj(alpha)*a0).expm()
-	psi0=D*vacuum	
-	*/
-	
 	mul_mat_vec(D, &vacuum[0], &alpha[0]);
 	
-	//dump_table_to_file<double, WAVEVECTOR_LEAD_DIM>(&alpha[0], "alpha", "dump-alpha-triham.txt");
-	
-	
-	//H=unity*K*(a0*dagger(a1)*dagger(a2)-dagger(a0)*a1*a2);
-	//H=1j*K*(a0*a1.dag()*a2.dag()-a0.dag()*a1*a2)
-	//H=1.0im*K*(a0*dagger(a1)*dagger(a2) - dagger(a0)*a1*a2)
-
 	Hsys = unity*K*(a0*dagger(a1)*dagger(a2)-dagger(a0)*a1*a2);
-	
-	//Heff = (H - ((1.0j)/2.0) * (C0.dag()*C0 + C1.dag()*C1 + C2.dag()*C2))	
 	
 	m.re=0;
 	m.im=0.5;
@@ -230,19 +195,6 @@ int prepare_matrices()
 	Heff = Hsys - m*(dagger(C0)*C0 + dagger(C1)*C1 + dagger(C2)*C2);
 	H = uMatrix_to_uCSRMatrix(Heff);
 	
-	
-//	#include "data-alpha-triham.txt"
-
-//	#include "data-co0-triham.txt"	
-//	#include "data-co1-triham.txt"	
-//	#include "data-co2-triham.txt"
-
-//	#include "data-h-triham.txt"
-	
-//	#include "data-e0-triham.txt"
-//	#include "data-e1-triham.txt"
-//	#include "data-e2-triham.txt"
-
 	
 	c_ops[0] = co0;
 	c_ops[1] = co1;
@@ -256,9 +208,6 @@ int prepare_matrices()
 	{
 		H.values[i] = H.values[i] * m;
 	}
-	
-	//dump_uCSRMatrix_to_file<double>(H, "h", "dump-triham-h.txt");
-
 	
 	return 0;
 }

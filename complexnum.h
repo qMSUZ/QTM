@@ -214,11 +214,9 @@ struct uMatrix {
 		if( m != nullptr ) delete [] m;
 	}
 	
-    // function operator() for indexing:  for reading (r)-rows, (c)-cols
     inline const T & operator()(const unsigned int r, const unsigned int c) const
     { return m[r*cols + c]; }
 
-    // function operator() for indexing:  for writing (r)-rows, (c)-cols
     inline T & operator()(const unsigned int r, const unsigned int c)
     { return m[r*cols + c]; }
 };
@@ -444,7 +442,6 @@ double simpleComplexMod (const struct simpleComplex<double> &a);
 float simpleComplexMod (const struct simpleComplex<float> &a);
 
 
-
 template <typename T>
 struct simpleComplex<T> make_simpleComplex (T r, T i);
 
@@ -666,9 +663,6 @@ struct simpleComplex<T> make_simpleComplex (T r, T i)
 	return t;
 }
 
-
-/* vector operators */
-
 template <typename T>
 const uVector< struct simpleComplex<T> > operator+(const T &a, const uVector< struct simpleComplex<T> > &v)
 {
@@ -885,8 +879,6 @@ struct uMatrix<T> operator-(const struct uMatrix<T> &m1, const struct uMatrix<T>
     return vtmp;
 }
 
-// scalar and matrix difference
-
 template <typename T>
 struct uMatrix< simpleComplex<T> > operator-(const simpleComplex<T> &s, const struct uMatrix< simpleComplex<T> > &m)
 {
@@ -920,8 +912,6 @@ struct uMatrix<simpleComplex<T> > operator-(const struct uMatrix<simpleComplex<T
 
     return vtmp;
 }
-
-// scalar and matrix mul
 
 template <typename T>
 struct uMatrix<T> operator*(const T &s, const struct uMatrix<T> &m)
@@ -1026,10 +1016,6 @@ struct uMatrix<T> operator*(const struct uMatrix<T> &m, const double &s)
     return vtmp;
 }
 
-
-
-// matrix and matrix mul
-
 template <typename T>
 struct uMatrix<T> operator*(const struct uMatrix<T> &m1, const struct uMatrix<T> &m2)
 {
@@ -1109,8 +1095,6 @@ struct simpleComplex<T> expect( const unsigned int sx, const unsigned int sy, co
 
         for(k=0; k < sy ; k++)
         {
-           //cout << " i: " << k*sy + k;
-
            n1 = n1 + tmp[ k*sy + k ];
         }
 
@@ -1153,8 +1137,6 @@ struct simpleComplex<T> expect( size_t sx, size_t sy, uMatrix< simpleComplex<T> 
 
         for(k=0; k < sy ; k++)
         {
-           //cout << " i: " << k*sy + k;
-
            n1 = n1 + tmp[ k*sy + k ];
         }
 
@@ -1167,8 +1149,6 @@ T expect_cnv_denmat( size_t sx, size_t sy,  const uVector< T > &m, const uVector
         size_t i, j, k;
 
         T n1, n2;
-
-        //const unsigned int csize = sx*sy;
 
         uVector< T > tmp( sx * sy ) ;
         uVector< T > matden( sx * sy ) ;
@@ -1190,8 +1170,6 @@ T expect_cnv_denmat( size_t sx, size_t sy,  const uVector< T > &m, const uVector
             }
         }
 
-        //print_Y( matden );
-
         for(i=0 ; i<sx ; i++)
         {
             for(j=0; j < sy; j++)
@@ -1212,8 +1190,6 @@ T expect_cnv_denmat( size_t sx, size_t sy,  const uVector< T > &m, const uVector
 
         for(k=0; k < sy ; k++)
         {
-           //cout << " i: " << k*sy + k;
-
            n1 = n1 + tmp[ k*sy + k ];
         }
 
@@ -1227,8 +1203,6 @@ T expect_cnv_denmat( size_t sx, size_t sy,  const uMatrix< T > &m, const uVector
         size_t i, j, k;
 
         T n1, n2;
-
-        //const unsigned int csize = sx*sy;
 
         uVector< T > tmp( sx * sy) ;
         uVector< T > matden( sx * sy ) ;
@@ -1250,8 +1224,6 @@ T expect_cnv_denmat( size_t sx, size_t sy,  const uMatrix< T > &m, const uVector
             }
         }
 
-        //print_Y( matden );
-
         for(i=0 ; i<sx ; i++)
         {
             for(j=0; j < sy; j++)
@@ -1272,8 +1244,6 @@ T expect_cnv_denmat( size_t sx, size_t sy,  const uMatrix< T > &m, const uVector
 
         for(k=0; k < sy ; k++)
         {
-           //cout << " i: " << k*sy + k;
-
            n1 = n1 + tmp[ k*sy + k ];
         }
 
@@ -1457,13 +1427,9 @@ uVector< struct simpleComplex<T> > dagnotdag( const uVector< struct simpleComple
 	uVector< struct simpleComplex<T> > r( SIZE1*SIZE2 );
 	uMatrix< simpleComplex<T> > d(SIZE1, SIZE2),nd(SIZE1, SIZE2);
 	
-	//d.cols = SIZE1;
-	//d.rows = SIZE2;	
 	for(i=0;i<SIZE1*SIZE2;i++)
 		d.m[i] = m[i];
 
-	//nd.cols = SIZE1;
-	//nd.rows = SIZE2;
 	for(i=0;i<SIZE1*SIZE2;i++)
 		nd.m[i] = m[i];
 	
@@ -1471,7 +1437,6 @@ uVector< struct simpleComplex<T> > dagnotdag( const uVector< struct simpleComple
 	
 	d  = d * nd;
 	
-	//r.size=SIZE1 * SIZE2;
 	for(i=0;i<SIZE1*SIZE2;i++)
 		r[i] = d.m[i];
 	
@@ -2037,6 +2002,4 @@ void tensor(simpleComplex<T> *m1, simpleComplex<T> *m2, simpleComplex<T>  *m3)
     }
 }
 
-
 #endif // __complexnum_h__
-

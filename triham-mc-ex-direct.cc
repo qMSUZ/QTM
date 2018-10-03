@@ -106,7 +106,6 @@ int prepare_matrices()
 	#include "data-e0-triham.txt"
 	#include "data-e1-triham.txt"
 	#include "data-e2-triham.txt"
-
 	
 	c_ops[0] = co0;
 	c_ops[1] = co1;

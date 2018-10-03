@@ -108,12 +108,6 @@ int main(int argc, char *argv[])
 	m.im=-1.0;
 	hmat = hmat * m;
 
-	//zero_vector(co0);
-	//zero_vector(co1);
-
-	//co0 = c0.m;
-	//co1 = c1.m;
-	
 	zero_vector( expect_operator );
 
 	expect_operator = uMatrix_to_uVector(emat);
@@ -122,14 +116,8 @@ int main(int argc, char *argv[])
 	
 	H=uMatrix_to_uVector(hmat);
 
-	//c_ops[0].rows=5;
-	//c_ops[0].cols=5;
-	//c_ops[0].m = co0;
 	c_ops[0] = c0;
 
-	//c_ops[1].rows=5;
-	//c_ops[1].cols=5;
-	//c_ops[1].m = co1;
 	c_ops[1] = c1;
 	
 	//opt.type_output = OUTPUT_FILE;

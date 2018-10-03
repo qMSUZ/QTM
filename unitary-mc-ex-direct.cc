@@ -88,16 +88,9 @@ int main(int argc, char *argv[])
 	alpha[0] = make_simpleComplex( 1.0, 0.0);
 	alpha[1] = make_simpleComplex( 0.0, 0.0);
 
-	// effective Hamiltonian
-	// Heff = (H - ((ih)/2.0) * sum(C^{+}_n C_n))
-	// i -- imaginary unity 
 	H[0] = make_simpleComplex( -0.00125, 0.0);    H[1] = make_simpleComplex( 0.0, -0.62831853);
 	H[2] = make_simpleComplex( 0.0, -0.62831853); H[3] = make_simpleComplex( -0.00125, 0.0);
 
-	//c_ops[0].rows=2;
-	//c_ops[0].cols=2;
-	//c_ops[0].m = collapse_operator;
-	
 	c_ops[0].recreate(2,2, collapse_operator);
 
 	opt.type_output = OUTPUT_FILE_PYTHON_STYLE;

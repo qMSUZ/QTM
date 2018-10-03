@@ -39,8 +39,6 @@ const size_t WAVEVECTOR_LEAD_DIM_SQR = 80*80;
 uMatrix< simpleComplex<double> > c_ops[ 1 ]  = { {WAVEVECTOR_LEAD_DIM} };
 uVector< simpleComplex<double> > collapse_operator;
 
-// template <typename T, size_t _S_ValueSize, size_t _S_RowPtr, size_t _S_ColInd>
-
 uCSRMatrix< simpleComplex<double> > expect_operator(40, 81, 40);
 uCSRMatrix< simpleComplex<double> > H(158, 81, 158);
 

@@ -111,10 +111,6 @@ int main(int argc, char *argv[])
     alpha[4] = make_simpleComplex( 0.0, 0.0);
 	
 	
-	// effective Hamiltonian
-	// Heff = (H - ((ih)/2.0) * sum(C^{+}_n C_n))
-	// i -- imaginary unity
-	
 	zero_vector( H );
     H[ 0] = make_simpleComplex( 0.0, -0.24418604651162792);    
 	H[ 6] = make_simpleComplex( 1.0, -4.6085271317829459);
@@ -128,14 +124,7 @@ int main(int argc, char *argv[])
 	}
 	
 	
-	//c_ops[0].rows=5;
-    //c_ops[0].cols=5;
-    //c_ops[0].m = co0;
 	c_ops[0].recreate(5,5, co0);
-
-	//c_ops[1].rows=5;
-    //c_ops[1].cols=5;
-    //c_ops[1].m = co1;
 	c_ops[1].recreate(5,5, co1);
 	
 	//opt.type_output = OUTPUT_FILE;

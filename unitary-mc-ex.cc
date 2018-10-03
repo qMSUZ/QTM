@@ -102,9 +102,6 @@ int main(int argc, char *argv[])
 	m.im=-1.0;
 	H = H * m;
 	
-	//c_ops[0].rows=2;
-	//c_ops[0].cols=2;
-	//c_ops[0].m = collapse_operator;
 	c_ops[0].recreate(2, 2, collapse_operator);
 	
 	opt.type_output = OUTPUT_FILE_PYTHON_STYLE;

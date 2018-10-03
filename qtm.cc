@@ -225,32 +225,20 @@ int zvode_method_for_mc(TYPE h, TYPE &_Tout_par, int steps,
                uVector< simpleComplex<TYPE> > &_Y_par,
                int (*fnc)(long int *NEQ, TYPE *T, dblcmplx *Y, dblcmplx *YDOT, dblcmplx *RPAR, long int *IPAR) )
 {
-	//int i = 0;
 
 	int errLvl = 0;
 
-	//while(i < steps )
-	{
-		//cout << "before zvode: T = " << _T_par.re << " Tout = " << _Tout_par << endl;
-		//cout << "before zvode: " << _Y_par << endl;
-		
-		zvode_((fncFP)fnc,
-			&neq, &_Y_par.m[0], &_T_par.re, &_Tout_par, &itol, &rtol_val, &atol_val, &itask,
-			&istate, &iopt, zwork, &lzw, rwork, &lrw, iwork, &liw,
-			NULL,
-			&mf, &rpar, &ipar);
+	zvode_((fncFP)fnc,
+		&neq, &_Y_par.m[0], &_T_par.re, &_Tout_par, &itol, &rtol_val, &atol_val, &itask,
+		&istate, &iopt, zwork, &lzw, rwork, &lrw, iwork, &liw,
+		NULL,
+		&mf, &rpar, &ipar);
 
-
-		//cout << "after zvode: T=" << _T_par.re << endl;
-		//cout << "after zvode: "  << _Y_par << endl;
 			
-		if(istate < 0)
-		{
-			cout << "Error halt.  ISTATE = " << istate << endl ;
-			errLvl = -1;
-			//break;
-		}
-		//i++;
+	if(istate < 0)
+	{
+		cout << "Error halt.  ISTATE = " << istate << endl ;
+		errLvl = -1;
 	}
 
 	return errLvl;
@@ -280,7 +268,6 @@ int process_trajectories(double _from_time, double _to_time,
 	double a =  _from_time;
 	double b = _to_time;
 	double h = (b - a) / ((double)N - 1);
-	//double hh;
 
 	double mu = 0.0, nu = 0.0,
         norm2_prev = 0.0,
@@ -291,7 +278,6 @@ int process_trajectories(double _from_time, double _to_time,
 		
     uVector< simpleComplex<double> > tlist(N);
 
-    //struct uMatrix<simpleComplex<double>, Ntrj> pt_trjs;
 	simpleComplex<double> **pt_trjs;
 	char *state_of_trjs;
 	
@@ -304,16 +290,10 @@ int process_trajectories(double _from_time, double _to_time,
 		state_of_trjs[trj]=TRJ_PERFECT;
 	}
 		
-
-	
-    //pt_trjs.rows = Ntrj ;
-    //pt_trjs.cols = N ;
-	
     simpleComplex<double> pt_avg_trj[N];
 
 	dblcmplx mone;
 	dblcmplx mtwo;
-
 	
 	mone.re = -1;
 	mone.im =  0;
@@ -351,35 +331,11 @@ int process_trajectories(double _from_time, double _to_time,
     uVector< simpleComplex<double> > Y_tmp(_WV_LEAD_DIM);
     uVector< simpleComplex<double> > out_psi(_WV_LEAD_DIM);
 	
-	//uVector< simpleComplex<double>, _WV_LEAD_DIM_SQR> id_operator;
-
 	zero_vector(Y);
 	zero_vector(Y_prev);
 	zero_vector(Y_tmp);
 	zero_vector(out_psi);
-	//zero_vector(id_operator);
 	
-	/*
-	k=0;
-	for(i=0;i<_WV_LEAD_DIM;i++)
-	{
-		for(j=0;j<_WV_LEAD_DIM;j++)
-		{
-			if( (i==j) )
-			{
-				id_operator[k] = make_simpleComplex( 1.0, 0.0 );
-			}
-			else
-			{
-				id_operator[k] = make_simpleComplex( 0.0, 0.0 );
-			}
-			k++;
-		}
-		k++;
-	}
-	*/
-	//k=0; i=0; j=0;
-
     struct simpleComplex<double>  ev;
 
 	neq = _WV_LEAD_DIM;
@@ -435,14 +391,12 @@ int process_trajectories(double _from_time, double _to_time,
 	rpar.im = 0.0;
 	aemax = 0.0;
 
-	
-	
+
 //          10 for nonstiff (Adams) method, no Jacobian used.
 //          21 for stiff (BDF) method, user-supplied full Jacobian.
 //          22 for stiff method, internally generated full Jacobian.
 //          24 for stiff method, user-supplied banded Jacobian.
 //          25 for stiff method, internally generated banded Jacobian.
-
 
 		
 	for( i = 0 ; i < N ; i++)
@@ -503,7 +457,6 @@ int process_trajectories(double _from_time, double _to_time,
 
 			pt_trjs[trj][0] = ev;
 
-
 			if(opt.verbose_mode >= 1)
 			{
 				printf ("process_trajectories: Node [%d] Proc.Name [%s]:  trj %d: after initial expecation operator.\n", host_rank, processor_name, trj);
@@ -535,19 +488,11 @@ int process_trajectories(double _from_time, double _to_time,
 						fflush(stdout);
 					}
 					
-					
-				    //cout << "norm2_prev=" << norm2_prev << "Yprev=" << Y_prev << endl;
-					//cout << "norm2_prev=" << norm2_prev << endl;
-					
 					itask=2;
 					rwork[1]=T.re;
 					odesolverstate = zvode_method_for_mc<double,_WV_LEAD_DIM,_WV_LEAD_DIM>(h, tout, 1,  T, Y, opt.fnc);
 									
-					//printf ("process_trajectories: node [%d] Proc.Name [%s], odesolverstate %d istate %d itask %d\n", host_rank, processor_name, odesolverstate, istate, itask);
-					
                     norm2_psi = norm( Y );
-					//cout << "norm2=" << norm2_prev << "Y=" << Y << endl;
-					//cout << "norm2_psi=" << norm2_psi << endl;
 
                     if( (norm2_psi <= mu) && (_C_OPS_SIZE > 0) )
                     {
@@ -565,11 +510,6 @@ int process_trajectories(double _from_time, double _to_time,
                         for( k_ons=0; k_ons < ode_norm_steps ; k_ons++)
                         {
                             T_guess = T_prev + log(norm2_prev/mu) / log(norm2_prev/norm2_psi) * (T_final-T_prev) ;
-
-                            /*if ( (T_guess.re < T_prev.re) || (T_guess.re > T_final.re) )
-                            {
-                                T_guess.re = T_prev.re + 0.5 * (T_final.re - T_prev.re) ;
-                            }*/
 
                             Y = Y_prev ;
                             T = T_prev ;
@@ -692,12 +632,9 @@ int process_trajectories(double _from_time, double _to_time,
 					// itask = 1 ;
 
 					} // if(norm2_psi <= mu )
-
-
 				} // while(T.re < tlist[k].re)
 
 				Y_tmp = Y;
-				//normalize(Y_tmp);
 
 				out_psi = Y_tmp / normsqrt(Y_tmp);
 				ev.re=0; ev.im=0;
@@ -725,10 +662,6 @@ int process_trajectories(double _from_time, double _to_time,
 #endif
 				pt_trjs[trj][k].re = ev.re;
 				pt_trjs[trj][k].im = ev.im;
-					//printf("ev=%f\n", ev.re); fflush(stdout);
-					//printf("pt_trjs(%d, %d)=%f\n", trj, k, pt_trjs(trj, k).re); fflush(stdout);
-
-
             } // for ( k = 0 ; k < N; k++)
     } // for ( trj = 0 ; trj < Ntrj ; trj++)
 
@@ -762,7 +695,6 @@ int process_trajectories(double _from_time, double _to_time,
 		fflush(stdout);
 		for ( k = 0 ; k < N; k++)
 		{
-			//printf("pt_trjs(0,k)=%f", pt_trjs(0,k).re);
 			pt_avg_trj[k] = pt_trjs[0][k];
 		}
 	}
@@ -774,14 +706,6 @@ int process_trajectories(double _from_time, double _to_time,
 		fflush(stdout);
 	}
 
-/*	
-		for( i = 0 ; i < N ; i++)
-			{
-				printf("data in nodetrj[%d] = %f \n", i, pt_avg_trj[i].re);
-				fflush(stdout);
-			}
-	*/	
-	
 	if(opt.state_of_trj_output == OUTPUT_STATE_OF_TRJ_FILE )
 	{
 			FILE *foutput;
@@ -930,9 +854,7 @@ int mpi_main(int argc, char *argv[],
 
 		for( k=1; k < num_procs; k++ )
 		{
-			//uVector< simpleComplex<double>, N > avg_trj;
 			simpleComplex<double> avg_trj[N];
-			//avg_trj.size=N;
 			
 			for( i = 0 ; i < N ; i++)
 			{
@@ -940,9 +862,6 @@ int mpi_main(int argc, char *argv[],
 				avg_trj[i].im = 0.0 ;
 			}
 		
-			//MPI_Recv(&avg_trj.m[0], 2*N, MPI_DOUBLE, MPI_ANY_SOURCE, TRJ_DATA_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-			//MPI_Barrier(MPI_COMM_WORLD);
-
 			MPI_Recv(&avg_trj[0], sizeof(avg_trj), MPI_BYTE, MPI_ANY_SOURCE, TRJ_DATA_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
 			for( i = 0 ; i < N ; i++)
