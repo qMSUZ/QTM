@@ -126,8 +126,9 @@ int prepare_matrices()
 	
 	tensor<double, WAVEVECTOR_LEAD_DIM/2, 2>( &c[0], &b[0], &alpha[0]);
 
-	H = uMatrix_to_uCSRMatrix(Hsys);	
+	H = uMatrix_to_uCSRMatrix(Hsys);
 	expect_operator = uMatrix_to_uCSRMatrix(eops);
+	
 	
 	for(i=0;i<H._values_size;i++)
 	{
@@ -142,14 +143,13 @@ int main(int argc, char *argv[])
 {
 	int r = 0;
 
-	
 	prepare_matrices();
 	
 	opt.type_output = OUTPUT_FILE_PYTHON_STYLE;
 	opt.only_final_trj = 1;
 	//opt.ode_method = __USE_ADAMS;
 	opt.ode_method = __USE_BDF;
-	opt.tolerance = 1e-12;
+	opt.tolerance = 1e-7;
 	opt.file_name = strdup("output-data-matplotfig.py");
 	opt.fnc = &myfex_fnc_f1;
 	
