@@ -43,6 +43,7 @@ OUTPUTNAME_U = unitary-ex
 OUTPUTNAME_TRIHAM = triham-ex
 OUTPUTNAME_BDPC = bdpc-ex
 OUTPUTNAME_JCM = jcm-ex
+OUTPUTNAME_PC = pumped-cavity-ex
 
 UNITARY_MAIN_SRC = unitary-mc-ex.cc rgen_lfsr113.cc
 UNITARY_MAIN_SRC_DIRECT = unitary-mc-ex-direct.cc rgen_lfsr113.cc
@@ -52,6 +53,7 @@ BDPC_OBJ_SRC = bdpc-ex.cc rgen_lfsr113.cc
 BDPC_MAIN_SRC_DIRECT = bdpc-ex-direct.cc rgen_lfsr113.cc
 JCM-MC-EX_SRC = jaynes-cummings-model-mc-ex.cc rgen_lfsr113.cc
 JCM-MC-EX_SRC_DIRECT = jaynes-cummings-model-mc-ex-direct.cc rgen_lfsr113.cc
+PC_MAIN_SRC = pumped-cavity-ex.cc rgen_lfsr113.cc
 
 ZVODE_SRC = zvode.f zgesl.f zgefa.f zgbsl.f zgbfa.f
 
@@ -87,9 +89,15 @@ jcm-ex: $(JCM-MC-EX_SRC) $(QTM_OBJ_ZVODE_SRC)
 jcm-ex-direct: $(JCM-MC-EX_SRC_DIRECT) $(QTM_OBJ_ZVODE_SRC)
 	$(CC) $(JCM-MC-EX_SRC_DIRECT) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_JCM) -lblas -llapack -lgfortran $(LIBRARY)
 
+pumped-cavity-ex: $(PC_MAIN_SRC) $(QTM_OBJ_ZVODE_SRC)
+		$(CC) $(PC_MAIN_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_PC) -lblas -llapack -lgfortran $(LIBRARY)
+
 testlfsr113:
 	$(MGXX) $(CFLAGS) -c rgen_lfsr113.cc
 	$(MGXX) $(CFLAGS) -o testrgen_lfsr113 testrgen_lfsr113.cc rgen_lfsr113.o
+
+misctest:
+	$(MGXX) $(CFLAGS) -o misctest misctest.cc
 
 .cc.o:
 	$(CC) -c $(CFLAGS) $< -o $@
