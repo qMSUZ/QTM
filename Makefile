@@ -1,10 +1,13 @@
-#
 #/***************************************************************************
-# *   Copyright (C) 2017 -- 2018 by Marek Sawerwain                         *
+# *   Copyright (C) 2019, 2021, 2022 by Marek Sawerwain                     *
+# *                                         <M.Sawerwain@gmail.com>         *
+# *                                         <M.Sawerwain@issi.uz.zgora.pl   *
+# *                                                                         *
+# *   Copyright (C) 2005 -- 2012 by Marek Sawerwain                         *
 # *                                         <M.Sawerwain@gmail.com>         *
 # *                                                                         *
-# *   Part of the Quantum Trajectory Method:                                *
-# *   https://github.com/qMSUZ/QTM                                          *
+# *   Part of the Quantum Computing Simulator:                              *
+# *   https://github.com/qMSUZ/QCS                                          *
 # *                                                                         *
 # *   This program is free software; you can redistribute it and/or modify  *
 # *   it under the terms of the GNU General Public License as published by  *
@@ -21,106 +24,99 @@
 # *   Free Software Foundation, Inc.,                                       *
 # *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
 # ***************************************************************************/
-#
 
-#
-#
-# Makefile for Quantum Trajectory Method with MPI and ZVODE
-#
-#
+CC=gcc
+CXX=g++
+
+ifeq ($(DEBUG),1) 
+CFLAGS=-g -I./include 
+else
+CFLAGS=-I./include 
+endif
+
+ifeq ($(PYTHON),1)
+CFLAGS+=-DPYTHON_SCRIPT $(PYTHON_CFLAGS) -I/opt/intel/oneapi/intelpython/python3.9/include/python3.9 -fPIC
+endif
 
 
-FGET 	= wget
-FC      = gfortran
-MGXX    = g++
-CC      = mpic++
-#CC      = g++
-RUN     = mpirun
-CFLAGS  = -I. -fpermissive -O2
-FCFLAGS = -I. -O2
+SWIGCMD=swig
+SWIGOPT=-DPYTHON_SCRIPT -python -I./include
+PYTHON_LIB=`pkg-config python3 --libs`
+PYTHON_CFLAGS=`pkg-config python3 --cflags`
+QCS_PYTHON_OUT = _qcs.so
 
-OUTPUTNAME_U = unitary-ex
-OUTPUTNAME_TRIHAM = triham-ex
-OUTPUTNAME_BDPC = bdpc-ex
-OUTPUTNAME_JCM = jcm-ex
-OUTPUTNAME_PC = pumped-cavity-ex
-
-UNITARY_MAIN_SRC = unitary-mc-ex.cc rgen_lfsr113.cc
-UNITARY_MAIN_SRC_DIRECT = unitary-mc-ex-direct.cc rgen_lfsr113.cc
-TRIHAM_OBJ_SRC = triham-mc-ex.cc rgen_lfsr113.cc
-TRIHAM_OBJ_SRC_DIRECT = triham-mc-ex-direct.cc rgen_lfsr113.cc
-BDPC_OBJ_SRC = bdpc-ex.cc rgen_lfsr113.cc
-BDPC_MAIN_SRC_DIRECT = bdpc-ex-direct.cc rgen_lfsr113.cc
-JCM-MC-EX_SRC = jaynes-cummings-model-mc-ex.cc rgen_lfsr113.cc
-JCM-MC-EX_SRC_DIRECT = jaynes-cummings-model-mc-ex-direct.cc rgen_lfsr113.cc
-PC_MAIN_SRC = pumped-cavity-ex.cc rgen_lfsr113.cc
-
-ZVODE_SRC = zvode.f zgesl.f zgefa.f zgbsl.f zgbfa.f
-
-#UNITARY_MAIN_SRC=$(QTM_MAIN_SRC:.cc=.o)
-QTM_OBJ_ZVODE_SRC=$(ZVODE_SRC:.f=.o)
-
-LIBRARY=
-
-all:
-
-unitary-ex: $(UNITARY_MAIN_SRC) $(QTM_OBJ_ZVODE_SRC)
-		$(CC) $(UNITARY_MAIN_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_U) -lblas -llapack -lgfortran $(LIBRARY)
-
-unitary-ex-direct: $(UNITARY_MAIN_SRC_DIRECT) $(QTM_OBJ_ZVODE_SRC)
-		$(CC) $(UNITARY_MAIN_SRC_DIRECT) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_U) -lblas -llapack -lgfortran $(LIBRARY)
-
-		
-triham-ex: $(TRIHAM_OBJ_SRC) $(QTM_OBJ_ZVODE_SRC)
-		$(CC) $(TRIHAM_OBJ_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_TRIHAM) -lblas -llapack -lgfortran $(LIBRARY)
-
-triham-ex-direct: $(TRIHAM_OBJ_SRC_DIRECT) $(QTM_OBJ_ZVODE_SRC)
-		$(CC) $(TRIHAM_OBJ_SRC_DIRECT) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_TRIHAM) -lblas -llapack -lgfortran $(LIBRARY)
-		
-bdpc-ex: $(BDPC_OBJ_SRC) $(QTM_OBJ_ZVODE_SRC)
-		$(CC) $(BDPC_OBJ_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_BDPC) -lblas -llapack -lgfortran $(LIBRARY)
-
-bdpc-ex-direct: $(BDPC_MAIN_SRC_DIRECT) $(QTM_OBJ_ZVODE_SRC)
-		$(CC) $(BDPC_MAIN_SRC_DIRECT) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_BDPC) -lblas -llapack  -lgfortran $(LIBRARY)
-
-jcm-ex: $(JCM-MC-EX_SRC) $(QTM_OBJ_ZVODE_SRC)
-	$(CC) $(JCM-MC-EX_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_JCM) -lblas -llapack -lgfortran $(LIBRARY)
+C_MAIN_SOURCES = src/qcs_misc.c \
+	src/qcs_hash_table.c \
+	src/qcs_complex.c \
+	src/qcs_rand.c \
+	src/qcs_matrix_and_vector.c \
+	src/qcs_qubit.c \
+	src/qcs_qubit_gates.c \
+	src/qcs_gates.c \
+	src/qcs_quantum_register.c \
+	src/qcs_info.c
 	
-jcm-ex-direct: $(JCM-MC-EX_SRC_DIRECT) $(QTM_OBJ_ZVODE_SRC)
-	$(CC) $(JCM-MC-EX_SRC_DIRECT) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_JCM) -lblas -llapack -lgfortran $(LIBRARY)
-
-pumped-cavity-ex: $(PC_MAIN_SRC) $(QTM_OBJ_ZVODE_SRC)
-		$(CC) $(PC_MAIN_SRC) $(QTM_OBJ_ZVODE_SRC) -o $(OUTPUTNAME_PC) -lblas -llapack -lgfortran $(LIBRARY)
-
-testlfsr113:
-	$(MGXX) $(CFLAGS) -c rgen_lfsr113.cc
-	$(MGXX) $(CFLAGS) -o testrgen_lfsr113 testrgen_lfsr113.cc rgen_lfsr113.o
-
-misctest:
-	$(MGXX) $(CFLAGS) -o misctest misctest.cc
-
-.cc.o:
-	$(CC) -c $(CFLAGS) $< -o $@
-
-.f.o: 
-	$(FC) -c $(FCFLAGS) $< -o $@
-
-zvode_download:
-	$(FGET) http://netlib.sandia.gov/linpack/zgbfa.f
-	$(FGET) http://netlib.sandia.gov/linpack/zgbsl.f
-	$(FGET) http://netlib.sandia.gov/linpack/zgefa.f
-	$(FGET) http://netlib.sandia.gov/linpack/zgesl.f
-	$(FGET) http://netlib.sandia.gov/ode/zvode.f
+C_OBJ_MAIN_SOURCES=$(C_MAIN_SOURCES:.c=.o)
 	
-run:
-	mpirun -n 2 qtm.exe
 
-run4:
-	mpirun -n 4 qtm.exe
+all: microex1
 
-partclean:
-	rm -f unitary-mc-ex.o triham-mc-ex.o bdpc-ex.o jaynes-cummings-model-mc-ex.o $(OUTPUTNAME_U) $(OUTPUTNAME_TRIHAM) $(OUTPUTNAME_BDPC) $(OUTPUTNAME_JCM)
-	
-clean: 
-	rm -f *.o $(OUTPUTNAME_U) $(OUTPUTNAME_TRIHAM) $(OUTPUTNAME_BDPC) $(OUTPUTNAME_JCM)
 
+qcs_wrap.o: src/qcs_wrap.c
+	$(CC) $(CFLAGS) -c $<
+
+src/qcs_wrap.c: src/qcs.i
+	$(SWIGCMD) $(SWIGOPT) $<
+
+library: $(C_OBJ_MAIN_SOURCES) $(CC_OBJ_MAIN_SOURCES)
+	ar rcs libqcs.a $(C_OBJ_MAIN_SOURCES) $(CC_OBJ_MAIN_SOURCES)
+	@echo "+--------------------------------------------------------------------------------+"
+	@echo "Static library has been created."
+
+python_port: library qcs_wrap.o
+	$(CC) $(LIB_OPT) -shared qcs_wrap.o libqcs.a -o $(QCS_PYTHON_OUT) $(PYTHON_LIB) -llapack -lblas -lgfortran -lm
+	cp src/qcs.py qcs.py
+
+ex-spectral-decomposition-test: examples_ansi_c/ex-spectral-decomposition-test.c library
+	$(CC) -o ex-spectral-decomposition-test examples_ansi_c/ex-spectral-decomposition-test.c -I./include -L. $(CFLAGS) $(PYTHON_LIB)  -lqcs -lpython3 -llapack -lblas -lgfortran -lm
+
+ex-rand-test: examples_ansi_c/ex-rand-test.c library
+	$(CC) -o ex-rand-test examples_ansi_c/ex-rand-test.c -I./include -L. $(CFLAGS) $(PYTHON_LIB)  -lqcs -lpython3.9 -llapack -lblas -lgfortran -lm
+
+ex-matrix-and-vector-test: examples_ansi_c/ex-matrix-and-vector-test.c library
+	$(CC) -o ex-matrix-and-vector-test examples_ansi_c/ex-matrix-and-vector-test.c -I./include -L. $(CFLAGS) -lqcs -llapack -lblas -lgfortran -lm
+
+
+microex1: examples_ansi_c/microexamples.c library
+	$(CC) -D__microEX1__ -o microex1 examples_ansi_c/microexamples.c -I./include -L. $(CFLAGS) -lqcs -llapack -lblas -lgfortran -lm
+#	$(CC) -o ex1 examples_ansi_c/ex1.c -I./include -L. $(CFLAGS) $(PYTHON_LIB)  -lqcs -lpython3.8 -llapack -lblas -lgfortran -lm
+
+microex2: examples_ansi_c/microexamples.c library
+	$(CC) -D__microEX2__ -o microex2 examples_ansi_c/microexamples.c -I./include -L. $(CFLAGS) -lqcs -llapack -lblas -lgfortran -lm
+#	$(CC) -o ex1 examples_ansi_c/ex1.c -I./include -L. $(CFLAGS) $(PYTHON_LIB)  -lqcs -lpython3.8 -llapack -lblas -lgfortran -lm
+
+microex3: examples_ansi_c/microexamples.c library
+	$(CC) -D__microEX3__ -o microex3 examples_ansi_c/microexamples.c -I./include -L. $(CFLAGS) -lqcs -llapack -lblas -lgfortran -lm
+#	$(CC) -o ex1 examples_ansi_c/ex1.c -I./include -L. $(CFLAGS) $(PYTHON_LIB)  -lqcs -lpython3.8 -llapack -lblas -lgfortran -lm
+
+microex4: examples_ansi_c/microexamples.c library
+	$(CC) -D__microEX4__ -o microex4 examples_ansi_c/microexamples.c -I./include -L. $(CFLAGS) -lqcs -llapack -lblas -lgfortran -lm
+#	$(CC) -o ex1 examples_ansi_c/ex1.c -I./include -L. $(CFLAGS) $(PYTHON_LIB)  -lqcs -lpython3.8 -llapack -lblas -lgfortran -lm
+
+
+clean:
+	rm -f *.o src/qcs_wrap.c examples_ansi_c/*.o src/*.o libqcs.a qcs.py qcs_wrap.c qcs_warp.o _qcs.so *.pyc \
+		microex1 microex2 microex3 microex4 \
+		ex-rand-test ex-spectral-decomposition-test ex-matrix-and-vector-test
+
+help:
+	@echo ".:             The Quantum Computing Simulator -- make build system             :."
+	@echo "+--------------------------------------------------------------------------------+"
+	@echo "+ Basic examples:                                                                +"
+	@echo "+      \"make library\" for building static library using default configuration.   +"
+	@echo "+      \"make PYTHON=1 python_port\" for building the module for Python language   +"
+	@echo "+                                                                                +"
+	@echo "+ Default action:                                                                +"
+	@echo "+      \"microex1\" for building the micro example 1                               +"
+	@echo "+                                                                                +"
+	@echo "+--------------------------------------------------------------------------------+"
